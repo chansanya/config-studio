@@ -1,52 +1,66 @@
 name: Deploy GitHub Pages
 
 on:
+  # 推送到主分支时自动发布 GitHub Pages。
   push:
     branches:
       - main
+  # 允许在 GitHub Actions 页面手动重跑发布。
   workflow_dispatch:
 
 permissions:
+  # 允许读取仓库代码。
   contents: read
+  # 允许把构建产物发布到 GitHub Pages。
   pages: write
+  # 允许 Actions 为 Pages 部署申请 OIDC 身份令牌。
   id-token: write
 
 concurrency:
+  # 同一时间只保留一条 Pages 发布流水线，避免重复部署互相覆盖。
   group: pages
   cancel-in-progress: true
 
 jobs:
   deploy:
     environment:
+      # GitHub Pages 专用环境，部署成功后会在这里显示页面地址。
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
+      # 拉取当前仓库代码，供后续安装依赖和构建使用。
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 安装 Node.js 运行环境，使用当前长期支持版本执行前端构建。
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
           cache: npm
 
+      # 根据 package-lock.json 安装依赖，保证 CI 构建结果可重复。
       - name: Install dependencies
         run: npm ci
 
+      # 构建静态站点；开启 GITHUB_PAGES 标记，让 Vite 使用仓库名作为 base path。
       - name: Build
         run: npm run build
         env:
           GITHUB_PAGES: "true"
 
+      # 初始化 GitHub Pages 部署环境，注册 Pages 所需的元信息。
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      # 把构建生成的 dist 目录上传为 Pages 发布制品。
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
 
+      # 将上一步上传的静态产物正式发布到 GitHub Pages。
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
