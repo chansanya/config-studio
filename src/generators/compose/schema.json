@@ -1,0 +1,281 @@
+{
+  "$schema": "config-generator/v1",
+  "id": "compose",
+  "service": {
+    "defaults": {
+      "image": "my-frontend:latest",
+      "buildContext": ".",
+      "dockerfile": "Dockerfile",
+      "ports": "8080:80",
+      "environment": "NODE_ENV=production",
+      "volumes": "",
+      "networks": "web",
+      "networkMode": "create",
+      "networkDriver": "bridge",
+      "networkSubnet": "",
+      "containerIPv4": "",
+      "dependsOn": "",
+      "restart": "unless-stopped",
+      "init": false,
+      "command": "",
+      "entrypoint": "",
+      "enableBuild": false,
+      "enableHealthcheck": true,
+      "healthcheckTest": "wget -qO- http://127.0.0.1/ || exit 1",
+      "healthcheckInterval": "30s",
+      "healthcheckTimeout": "3s",
+      "healthcheckRetries": 3,
+      "enableLogging": true,
+      "loggingDriver": "json-file",
+      "loggingMaxSize": "10m",
+      "loggingMaxFile": 3,
+      "enableDeploy": false,
+      "deployReplicas": 1,
+      "deployCpuLimit": "0.50",
+      "deployMemoryLimit": "512M"
+    },
+    "first": {
+      "name": "app",
+      "containerName": "my-frontend"
+    },
+    "next": {
+      "name": "app-{serial}",
+      "containerName": "my-frontend-{serial}"
+    },
+    "fields": [
+      {
+        "key": "name",
+        "label": "service 名称",
+        "hint": "Compose services 下的键名",
+        "type": "text"
+      },
+      {
+        "key": "image",
+        "label": "image",
+        "hint": "镜像名称和 tag",
+        "type": "text"
+      },
+      {
+        "key": "enableBuild",
+        "label": "启用 build",
+        "hint": "生成 build.context/dockerfile",
+        "type": "toggle"
+      },
+      {
+        "key": "buildContext",
+        "label": "build.context",
+        "hint": "构建上下文目录",
+        "type": "text",
+        "when": "enableBuild"
+      },
+      {
+        "key": "dockerfile",
+        "label": "build.dockerfile",
+        "hint": "Dockerfile 路径",
+        "type": "text",
+        "when": "enableBuild"
+      },
+      {
+        "key": "containerName",
+        "label": "container_name",
+        "hint": "容器名称",
+        "type": "text"
+      },
+      {
+        "key": "ports",
+        "label": "ports",
+        "hint": "端口映射，逗号分隔，如 8080:80",
+        "type": "text"
+      },
+      {
+        "key": "environment",
+        "label": "environment",
+        "hint": "键值对，逗号分隔，如 NODE_ENV=production",
+        "type": "text"
+      },
+      {
+        "key": "volumes",
+        "label": "volumes",
+        "hint": "卷挂载，逗号分隔",
+        "type": "text"
+      },
+      {
+        "key": "networks",
+        "label": "networks",
+        "hint": "网络名称，逗号分隔",
+        "type": "text"
+      },
+      {
+        "key": "networkMode",
+        "label": "网络来源",
+        "hint": "创建新网络或使用 Docker 中已存在网络",
+        "type": "select",
+        "options": [
+          { "value": "create", "label": "创建网络" },
+          { "value": "external", "label": "使用现有网络" }
+        ]
+      },
+      {
+        "key": "networkDriver",
+        "label": "network.driver",
+        "hint": "创建网络的驱动，如 bridge",
+        "type": "text",
+        "when": { "key": "networkMode", "value": "create" }
+      },
+      {
+        "key": "networkSubnet",
+        "label": "network.subnet",
+        "hint": "固定 IP 需要子网，如 172.20.0.0/24",
+        "type": "text",
+        "when": { "key": "networkMode", "value": "create" }
+      },
+      {
+        "key": "containerIPv4",
+        "label": "ipv4_address",
+        "hint": "当前容器固定 IPv4，如 172.20.0.10",
+        "type": "text"
+      },
+      {
+        "key": "dependsOn",
+        "label": "depends_on",
+        "hint": "依赖服务，逗号分隔",
+        "type": "text"
+      },
+      {
+        "key": "restart",
+        "label": "restart",
+        "hint": "重启策略",
+        "type": "select",
+        "options": [
+          { "value": "no", "label": "no" },
+          { "value": "always", "label": "always" },
+          { "value": "on-failure", "label": "on-failure" },
+          { "value": "unless-stopped", "label": "unless-stopped" }
+        ]
+      },
+      {
+        "key": "init",
+        "label": "init",
+        "hint": "启用 init 进程处理僵尸进程和信号转发",
+        "type": "toggle"
+      },
+      {
+        "key": "command",
+        "label": "command",
+        "hint": "覆盖容器启动命令",
+        "type": "text"
+      },
+      {
+        "key": "entrypoint",
+        "label": "entrypoint",
+        "hint": "覆盖镜像 ENTRYPOINT，如 /docker-entrypoint.sh",
+        "type": "text"
+      },
+      {
+        "key": "enableHealthcheck",
+        "label": "启用 healthcheck",
+        "hint": "生成健康检查",
+        "type": "toggle"
+      },
+      {
+        "key": "healthcheckTest",
+        "label": "healthcheck.test",
+        "hint": "CMD-SHELL 内容",
+        "type": "text",
+        "when": "enableHealthcheck"
+      },
+      {
+        "key": "healthcheckInterval",
+        "label": "interval",
+        "hint": "检查间隔",
+        "type": "text",
+        "when": "enableHealthcheck"
+      },
+      {
+        "key": "healthcheckTimeout",
+        "label": "timeout",
+        "hint": "超时",
+        "type": "text",
+        "when": "enableHealthcheck"
+      },
+      {
+        "key": "healthcheckRetries",
+        "label": "retries",
+        "hint": "重试次数",
+        "type": "number",
+        "min": 1,
+        "when": "enableHealthcheck"
+      },
+      {
+        "key": "enableLogging",
+        "label": "启用 logging",
+        "hint": "生成日志驱动和轮转配置",
+        "type": "toggle"
+      },
+      {
+        "key": "loggingDriver",
+        "label": "logging.driver",
+        "hint": "日志驱动，如 json-file",
+        "type": "text",
+        "when": "enableLogging"
+      },
+      {
+        "key": "loggingMaxSize",
+        "label": "logging.options.max-size",
+        "hint": "单文件最大大小，如 10m",
+        "type": "text",
+        "when": "enableLogging"
+      },
+      {
+        "key": "loggingMaxFile",
+        "label": "logging.options.max-file",
+        "hint": "保留文件数量",
+        "type": "number",
+        "min": 1,
+        "when": "enableLogging"
+      },
+      {
+        "key": "enableDeploy",
+        "label": "启用 deploy",
+        "hint": "生成 replicas/resources，适合 Swarm 或兼容平台参考",
+        "type": "toggle"
+      },
+      {
+        "key": "deployReplicas",
+        "label": "deploy.replicas",
+        "hint": "副本数量",
+        "type": "number",
+        "min": 1,
+        "when": "enableDeploy"
+      },
+      {
+        "key": "deployCpuLimit",
+        "label": "deploy.resources.cpus",
+        "hint": "CPU 限制，如 0.50",
+        "type": "text",
+        "when": "enableDeploy"
+      },
+      {
+        "key": "deployMemoryLimit",
+        "label": "deploy.resources.memory",
+        "hint": "内存限制，如 512M",
+        "type": "text",
+        "when": "enableDeploy"
+      }
+    ]
+  },
+  "block": {
+    "title": "Services",
+    "icon": "Boxes",
+    "addLabel": "新增 Service",
+    "add": {
+      "key": "value",
+      "label": "类型",
+      "hint": "添加一个新的 Compose service"
+    },
+    "emptyTitle": "还没有 Service",
+    "emptyText": "点击新增 Service 后开始编排容器。",
+    "groupTitle": "Service 参数",
+    "groupIcon": "Settings2"
+  }
+}

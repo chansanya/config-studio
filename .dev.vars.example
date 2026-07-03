@@ -1,0 +1,17 @@
+# 本地开发 AI 代理环境变量 —— 复制本文件为 .dev.vars 并填入真实值。
+# wrangler pages dev 会自动加载 .dev.vars(仅本地, 不进 git, 不进 dist)。
+# 生产环境可直接批量同步:
+#   cp .dev.vars.example .dev.vars
+#   npm run pages:env
+# 该命令会把 .dev.vars 里的 AI_BASE_URL / AI_API_KEY / AI_MODEL 都保存为 Pages secret。
+# 同步后重新执行 npm run pages:deploy 或在 Cloudflare Pages 重新部署一次。
+
+# OpenAI 兼容 API base URL, 不带 /chat/completions 后缀。
+# 示例: https://api.openai.com/v1  |  https://your-gateway/v1
+AI_BASE_URL=https://api.openai.com/v1
+
+# API Key(本地调试用, 切勿提交)。
+AI_API_KEY=sk-change-me
+
+# 可选: 默认模型名(前端未指定 model 时使用)。
+AI_MODEL=gpt-4o-mini

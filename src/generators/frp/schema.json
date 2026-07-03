@@ -1,0 +1,641 @@
+{
+  "$schema": "config-generator/v1",
+  "id": "frp",
+  "endpoint": {
+    "state": {
+      "value": "frps"
+    },
+    "group": {
+      "title": "FRP 配置端",
+      "icon": "Server",
+      "fields": [
+        {
+          "key": "value",
+          "label": "配置类型",
+          "hint": "选择生成 frps.toml 或 frpc.toml",
+          "type": "select",
+          "options": [
+            { "value": "frps", "label": "frps 服务端" },
+            { "value": "frpc", "label": "frpc 客户端" }
+          ]
+        }
+      ]
+    }
+  },
+  "newMode": {
+    "value": "ssh"
+  },
+  "proxyModes": [
+    { "id": "ssh", "title": "SSH", "summary": "TCP 映射本机 22 端口", "icon": "Terminal" },
+    { "id": "tcp", "title": "TCP", "summary": "RDP、数据库、任意 TCP 服务", "icon": "Cable" },
+    { "id": "udp", "title": "UDP", "summary": "游戏、DNS、语音等 UDP 服务", "icon": "Radio" },
+    { "id": "http", "title": "HTTP", "summary": "域名、子域名、路径转发", "icon": "Globe" },
+    { "id": "https", "title": "HTTPS", "summary": "基于 SNI 的 HTTPS 服务", "icon": "Lock" },
+    { "id": "stcp", "title": "STCP", "summary": "需要访问者配置的安全 TCP", "icon": "Shield" },
+    { "id": "xtcp", "title": "XTCP", "summary": "P2P/NAT 打洞 TCP 通道", "icon": "Network" },
+    { "id": "p2p", "title": "P2P", "summary": "基于 XTCP 的点对点模板", "icon": "Route" },
+    { "id": "tcpmux", "title": "TCPMUX", "summary": "HTTP CONNECT 端口复用", "icon": "Route" },
+    { "id": "sudp", "title": "SUDP", "summary": "需要访问者配置的安全 UDP", "icon": "Shield" },
+    { "id": "range", "title": "端口范围", "summary": "批量生成连续 TCP/UDP 代理", "icon": "Cable" },
+    { "id": "http_proxy", "title": "HTTP Proxy", "summary": "客户端 HTTP 代理插件", "icon": "Globe" },
+    { "id": "socks5", "title": "SOCKS5", "summary": "客户端 SOCKS5 代理插件", "icon": "Network" },
+    { "id": "static_file", "title": "Static File", "summary": "静态文件服务插件", "icon": "FileText" },
+    { "id": "unix_socket", "title": "Unix Socket", "summary": "转发本机 Unix Socket", "icon": "Terminal" },
+    { "id": "http2https", "title": "HTTP2HTTPS", "summary": "HTTP 入口转本地 HTTPS", "icon": "Lock" },
+    { "id": "https2http", "title": "HTTPS2HTTP", "summary": "HTTPS 入口转本地 HTTP", "icon": "Globe" },
+    { "id": "https2https", "title": "HTTPS2HTTPS", "summary": "HTTPS 入口转本地 HTTPS", "icon": "Lock" }
+  ],
+  "modeDefaults": {
+    "ssh": { "name": "ssh-tcp", "localIP": "127.0.0.1", "localPort": 22, "remotePort": 6000, "sshUser": "root" },
+    "tcp": { "name": "rdp-tcp", "localIP": "127.0.0.1", "localPort": 3389, "remotePort": 9569 },
+    "udp": { "name": "game-udp", "localIP": "127.0.0.1", "localPort": 27015, "remotePort": 27015 },
+    "http": {
+      "name": "web-http",
+      "localIP": "127.0.0.1",
+      "localPort": 8080,
+      "customDomains": "app.example.com",
+      "subdomain": "app",
+      "locations": "/",
+      "httpUser": "",
+      "httpPassword": "",
+      "hostHeaderRewrite": "",
+      "routeByHTTPUser": "",
+      "requestHeaders": "X-Forwarded-Proto=https",
+      "responseHeaders": "X-Proxy-By=frp"
+    },
+    "https": {
+      "name": "web-https",
+      "localIP": "127.0.0.1",
+      "localPort": 443,
+      "customDomains": "secure.example.com",
+      "subdomain": "secure"
+    },
+    "stcp": {
+      "name": "secret-ssh",
+      "localIP": "127.0.0.1",
+      "localPort": 22,
+      "secretKey": "change-me-secret-key",
+      "allowUsers": "*",
+      "visitorName": "secret-ssh-visitor",
+      "bindAddr": "127.0.0.1",
+      "bindPort": 6000
+    },
+    "xtcp": {
+      "name": "rdp-xtcp",
+      "localIP": "127.0.0.1",
+      "localPort": 3389,
+      "secretKey": "change-me-secret-key",
+      "allowUsers": "*",
+      "visitorName": "rdp-xtcp-visitor",
+      "bindAddr": "127.0.0.1",
+      "bindPort": 7000,
+      "keepTunnelOpen": false
+    },
+    "p2p": {
+      "name": "p2p-workstation",
+      "localIP": "127.0.0.1",
+      "localPort": 3389,
+      "secretKey": "change-me-secret-key",
+      "allowUsers": "*",
+      "visitorName": "p2p-workstation-visitor",
+      "bindAddr": "127.0.0.1",
+      "bindPort": 7100,
+      "keepTunnelOpen": true
+    },
+    "tcpmux": {
+      "name": "ssh-tcpmux",
+      "multiplexer": "httpconnect",
+      "localIP": "127.0.0.1",
+      "localPort": 22,
+      "customDomains": "ssh.example.com"
+    },
+    "sudp": {
+      "name": "dns-sudp",
+      "localIP": "127.0.0.1",
+      "localPort": 53,
+      "secretKey": "change-me-secret-key",
+      "allowUsers": "*",
+      "visitorName": "dns-sudp-visitor",
+      "bindAddr": "127.0.0.1",
+      "bindPort": 5353
+    },
+    "range": {
+      "name": "range-service",
+      "rangeType": "tcp",
+      "localIP": "127.0.0.1",
+      "localPortStart": 6000,
+      "localPortEnd": 6003,
+      "remotePortStart": 9600
+    },
+    "http_proxy": { "name": "http-proxy-plugin", "remotePort": 8080, "httpUser": "proxy", "httpPassword": "change-me" },
+    "socks5": { "name": "socks5-plugin", "remotePort": 1080, "username": "socks", "password": "change-me" },
+    "static_file": {
+      "name": "static-file-plugin",
+      "remotePort": 8081,
+      "localPath": "/var/www/html",
+      "stripPrefix": "static",
+      "httpUser": "",
+      "httpPassword": ""
+    },
+    "unix_socket": { "name": "unix-socket-plugin", "remotePort": 9000, "unixPath": "/var/run/docker.sock" },
+    "http2https": {
+      "name": "http-to-https",
+      "localAddr": "127.0.0.1:443",
+      "customDomains": "secure.example.com",
+      "hostHeaderRewrite": ""
+    },
+    "https2http": {
+      "name": "https-to-http",
+      "localAddr": "127.0.0.1:8080",
+      "customDomains": "tls.example.com",
+      "crtPath": "./server.crt",
+      "keyPath": "./server.key",
+      "hostHeaderRewrite": ""
+    },
+    "https2https": {
+      "name": "https-to-https",
+      "localAddr": "127.0.0.1:443",
+      "customDomains": "edge.example.com",
+      "crtPath": "./server.crt",
+      "keyPath": "./server.key",
+      "hostHeaderRewrite": ""
+    }
+  },
+  "modeFields": {
+    "ssh": [
+      { "key": "name", "label": "name", "hint": "代理名称", "type": "text" },
+      { "key": "localIP", "label": "localIP", "hint": "本地服务地址", "type": "text" },
+      { "key": "localPort", "label": "localPort", "hint": "本地服务端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "remotePort", "label": "remotePort", "hint": "公网访问端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "sshUser", "label": "SSH 用户", "hint": "只用于生成连接命令", "type": "text" }
+    ],
+    "tcp": [
+      { "key": "name", "label": "name", "hint": "代理名称", "type": "text" },
+      { "key": "localIP", "label": "localIP", "hint": "本地服务地址", "type": "text" },
+      { "key": "localPort", "label": "localPort", "hint": "本地服务端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "remotePort", "label": "remotePort", "hint": "公网访问端口", "type": "number", "min": 1, "max": 65535 }
+    ],
+    "udp": [
+      { "key": "name", "label": "name", "hint": "代理名称", "type": "text" },
+      { "key": "localIP", "label": "localIP", "hint": "本地服务地址", "type": "text" },
+      { "key": "localPort", "label": "localPort", "hint": "本地服务端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "remotePort", "label": "remotePort", "hint": "公网访问端口", "type": "number", "min": 1, "max": 65535 }
+    ],
+    "http": [
+      { "key": "name", "label": "name", "hint": "代理名称", "type": "text" },
+      { "key": "localIP", "label": "localIP", "hint": "本地 Web 服务地址", "type": "text" },
+      { "key": "localPort", "label": "localPort", "hint": "本地 Web 服务端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "customDomains", "label": "customDomains", "hint": "域名列表，逗号分隔", "type": "text" },
+      { "key": "subdomain", "label": "subdomain", "hint": "配合 frps subDomainHost 使用", "type": "text" },
+      { "key": "locations", "label": "locations", "hint": "路径前缀，逗号分隔", "type": "text" },
+      { "key": "httpUser", "label": "httpUser", "hint": "HTTP Basic Auth 用户名", "type": "text" },
+      { "key": "httpPassword", "label": "httpPassword", "hint": "HTTP Basic Auth 密码", "type": "text" },
+      { "key": "hostHeaderRewrite", "label": "hostHeaderRewrite", "hint": "Host 头重写", "type": "text" },
+      { "key": "routeByHTTPUser", "label": "routeByHTTPUser", "hint": "按 HTTP 用户路由", "type": "text" },
+      { "key": "requestHeaders", "label": "requestHeaders.set", "hint": "请求头键值对，逗号分隔", "type": "text" },
+      { "key": "responseHeaders", "label": "responseHeaders.set", "hint": "响应头键值对，逗号分隔", "type": "text" }
+    ],
+    "https": [
+      { "key": "name", "label": "name", "hint": "代理名称", "type": "text" },
+      { "key": "localIP", "label": "localIP", "hint": "本地 HTTPS 服务地址", "type": "text" },
+      { "key": "localPort", "label": "localPort", "hint": "本地 HTTPS 服务端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "customDomains", "label": "customDomains", "hint": "域名列表，逗号分隔", "type": "text" },
+      { "key": "subdomain", "label": "subdomain", "hint": "配合 frps subDomainHost 使用", "type": "text" }
+    ],
+    "stcp": [
+      { "key": "name", "label": "服务方 name", "hint": "生成 [[proxies]]", "type": "text" },
+      { "key": "localIP", "label": "localIP", "hint": "服务方本地地址", "type": "text" },
+      { "key": "localPort", "label": "localPort", "hint": "服务方本地端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "secretKey", "label": "secretKey", "hint": "服务方和访问方必须一致", "type": "text" },
+      { "key": "allowUsers", "label": "allowUsers", "hint": "允许访问用户，逗号分隔", "type": "text" },
+      { "key": "visitorName", "label": "访问方 name", "hint": "生成 [[visitors]]", "type": "text" },
+      { "key": "bindAddr", "label": "bindAddr", "hint": "访问方本地监听地址", "type": "text" },
+      { "key": "bindPort", "label": "bindPort", "hint": "访问方本地监听端口", "type": "number", "min": 1, "max": 65535 }
+    ],
+    "xtcp": [
+      { "key": "name", "label": "服务方 name", "hint": "生成 [[proxies]]", "type": "text" },
+      { "key": "localIP", "label": "localIP", "hint": "服务方本地地址", "type": "text" },
+      { "key": "localPort", "label": "localPort", "hint": "服务方本地端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "secretKey", "label": "secretKey", "hint": "服务方和访问方必须一致", "type": "text" },
+      { "key": "allowUsers", "label": "allowUsers", "hint": "允许访问用户，逗号分隔", "type": "text" },
+      { "key": "visitorName", "label": "访问方 name", "hint": "生成 [[visitors]]", "type": "text" },
+      { "key": "bindAddr", "label": "bindAddr", "hint": "访问方本地监听地址", "type": "text" },
+      { "key": "bindPort", "label": "bindPort", "hint": "访问方本地监听端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "keepTunnelOpen", "label": "keepTunnelOpen", "hint": "访问方保持打洞通道", "type": "toggle" }
+    ],
+    "p2p": [
+      { "key": "name", "label": "服务方 name", "hint": "生成 [[proxies]]", "type": "text" },
+      { "key": "localIP", "label": "localIP", "hint": "服务方本地地址", "type": "text" },
+      { "key": "localPort", "label": "localPort", "hint": "服务方本地端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "secretKey", "label": "secretKey", "hint": "服务方和访问方必须一致", "type": "text" },
+      { "key": "allowUsers", "label": "allowUsers", "hint": "允许访问用户，逗号分隔", "type": "text" },
+      { "key": "visitorName", "label": "访问方 name", "hint": "生成 [[visitors]]", "type": "text" },
+      { "key": "bindAddr", "label": "bindAddr", "hint": "访问方本地监听地址", "type": "text" },
+      { "key": "bindPort", "label": "bindPort", "hint": "访问方本地监听端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "keepTunnelOpen", "label": "keepTunnelOpen", "hint": "访问方保持 P2P 通道", "type": "toggle" }
+    ],
+    "tcpmux": [
+      { "key": "name", "label": "name", "hint": "代理名称", "type": "text" },
+      { "key": "multiplexer", "label": "multiplexer", "hint": "TCPMUX 复用器", "type": "select", "options": [{ "value": "httpconnect", "label": "httpconnect" }] },
+      { "key": "localIP", "label": "localIP", "hint": "本地 TCP 服务地址", "type": "text" },
+      { "key": "localPort", "label": "localPort", "hint": "本地 TCP 服务端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "customDomains", "label": "customDomains", "hint": "HTTP CONNECT 域名，逗号分隔", "type": "text" }
+    ],
+    "sudp": [
+      { "key": "name", "label": "服务方 name", "hint": "生成 [[proxies]]", "type": "text" },
+      { "key": "localIP", "label": "localIP", "hint": "服务方本地地址", "type": "text" },
+      { "key": "localPort", "label": "localPort", "hint": "服务方本地端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "secretKey", "label": "secretKey", "hint": "服务方和访问方必须一致", "type": "text" },
+      { "key": "allowUsers", "label": "allowUsers", "hint": "允许访问用户，逗号分隔", "type": "text" },
+      { "key": "visitorName", "label": "访问方 name", "hint": "生成 [[visitors]]", "type": "text" },
+      { "key": "bindAddr", "label": "bindAddr", "hint": "访问方本地监听地址", "type": "text" },
+      { "key": "bindPort", "label": "bindPort", "hint": "访问方本地监听端口", "type": "number", "min": 1, "max": 65535 }
+    ],
+    "range": [
+      { "key": "name", "label": "name", "hint": "批量代理名前缀", "type": "text" },
+      { "key": "rangeType", "label": "type", "hint": "批量生成 TCP 或 UDP", "type": "select", "options": [{ "value": "tcp", "label": "tcp" }, { "value": "udp", "label": "udp" }] },
+      { "key": "localIP", "label": "localIP", "hint": "本地服务地址", "type": "text" },
+      { "key": "localPortStart", "label": "localPort.start", "hint": "本地端口起点", "type": "number", "min": 1, "max": 65535 },
+      { "key": "localPortEnd", "label": "localPort.end", "hint": "本地端口终点", "type": "number", "min": 1, "max": 65535 },
+      { "key": "remotePortStart", "label": "remotePort.start", "hint": "远端端口起点", "type": "number", "min": 1, "max": 65535 }
+    ],
+    "http_proxy": [
+      { "key": "name", "label": "name", "hint": "代理名称", "type": "text" },
+      { "key": "remotePort", "label": "remotePort", "hint": "公网访问端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "httpUser", "label": "plugin.httpUser", "hint": "HTTP 代理用户名", "type": "text" },
+      { "key": "httpPassword", "label": "plugin.httpPassword", "hint": "HTTP 代理密码", "type": "text" }
+    ],
+    "socks5": [
+      { "key": "name", "label": "name", "hint": "代理名称", "type": "text" },
+      { "key": "remotePort", "label": "remotePort", "hint": "公网访问端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "username", "label": "plugin.username", "hint": "SOCKS5 用户名", "type": "text" },
+      { "key": "password", "label": "plugin.password", "hint": "SOCKS5 密码", "type": "text" }
+    ],
+    "static_file": [
+      { "key": "name", "label": "name", "hint": "代理名称", "type": "text" },
+      { "key": "remotePort", "label": "remotePort", "hint": "公网访问端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "localPath", "label": "plugin.localPath", "hint": "静态文件目录", "type": "text" },
+      { "key": "stripPrefix", "label": "plugin.stripPrefix", "hint": "剥离 URL 前缀", "type": "text" },
+      { "key": "httpUser", "label": "plugin.httpUser", "hint": "可选 HTTP 用户名", "type": "text" },
+      { "key": "httpPassword", "label": "plugin.httpPassword", "hint": "可选 HTTP 密码", "type": "text" }
+    ],
+    "unix_socket": [
+      { "key": "name", "label": "name", "hint": "代理名称", "type": "text" },
+      { "key": "remotePort", "label": "remotePort", "hint": "公网访问端口", "type": "number", "min": 1, "max": 65535 },
+      { "key": "unixPath", "label": "plugin.unixPath", "hint": "Unix socket 路径", "type": "text" }
+    ],
+    "http2https": [
+      { "key": "name", "label": "name", "hint": "代理名称", "type": "text" },
+      { "key": "localAddr", "label": "plugin.localAddr", "hint": "插件转发目标地址", "type": "text" },
+      { "key": "customDomains", "label": "customDomains", "hint": "域名列表，逗号分隔", "type": "text" },
+      { "key": "hostHeaderRewrite", "label": "hostHeaderRewrite", "hint": "Host 头重写", "type": "text" }
+    ],
+    "https2http": [
+      { "key": "name", "label": "name", "hint": "代理名称", "type": "text" },
+      { "key": "localAddr", "label": "plugin.localAddr", "hint": "插件转发目标地址", "type": "text" },
+      { "key": "customDomains", "label": "customDomains", "hint": "域名列表，逗号分隔", "type": "text" },
+      { "key": "hostHeaderRewrite", "label": "hostHeaderRewrite", "hint": "Host 头重写", "type": "text" },
+      { "key": "crtPath", "label": "plugin.crtPath", "hint": "证书路径", "type": "text" },
+      { "key": "keyPath", "label": "plugin.keyPath", "hint": "私钥路径", "type": "text" }
+    ],
+    "https2https": [
+      { "key": "name", "label": "name", "hint": "代理名称", "type": "text" },
+      { "key": "localAddr", "label": "plugin.localAddr", "hint": "插件转发目标地址", "type": "text" },
+      { "key": "customDomains", "label": "customDomains", "hint": "域名列表，逗号分隔", "type": "text" },
+      { "key": "hostHeaderRewrite", "label": "hostHeaderRewrite", "hint": "Host 头重写", "type": "text" },
+      { "key": "crtPath", "label": "plugin.crtPath", "hint": "证书路径", "type": "text" },
+      { "key": "keyPath", "label": "plugin.keyPath", "hint": "私钥路径", "type": "text" }
+    ]
+  },
+  "advanced": {
+    "defaults": {
+      "useEncryption": false,
+      "useCompression": false,
+      "enableBandwidth": false,
+      "bandwidthLimit": "1MB",
+      "bandwidthLimitMode": "client",
+      "enableLoadBalance": false,
+      "group": "web",
+      "groupKey": "change-me",
+      "enableHealthCheck": false,
+      "healthCheckType": "tcp",
+      "healthCheckPath": "/",
+      "healthCheckIntervalSeconds": 10,
+      "healthCheckTimeoutSeconds": 3,
+      "healthCheckMaxFailed": 3,
+      "enableProxyProtocol": false,
+      "proxyProtocolVersion": "v2",
+      "enableMetadatas": false,
+      "metadatas": "owner=ops,env=prod"
+    },
+    "fields": [
+      { "key": "useEncryption", "label": "transport.useEncryption", "hint": "为当前代理启用加密", "type": "toggle" },
+      { "key": "useCompression", "label": "transport.useCompression", "hint": "为当前代理启用压缩", "type": "toggle" },
+      { "key": "enableBandwidth", "label": "启用带宽限制", "hint": "生成 transport.bandwidthLimit", "type": "toggle" },
+      { "key": "bandwidthLimit", "label": "transport.bandwidthLimit", "hint": "例如 1MB 或 512KB", "type": "text", "when": "enableBandwidth" },
+      {
+        "key": "bandwidthLimitMode",
+        "label": "transport.bandwidthLimitMode",
+        "hint": "client 或 server",
+        "type": "select",
+        "options": [
+          { "value": "client", "label": "client" },
+          { "value": "server", "label": "server" }
+        ],
+        "when": "enableBandwidth"
+      },
+      { "key": "enableLoadBalance", "label": "启用负载均衡组", "hint": "生成 loadBalancer.group/loadBalancer.groupKey", "type": "toggle" },
+      { "key": "group", "label": "loadBalancer.group", "hint": "同组同名实现负载均衡", "type": "text", "when": "enableLoadBalance" },
+      { "key": "groupKey", "label": "loadBalancer.groupKey", "hint": "同组代理必须一致", "type": "text", "when": "enableLoadBalance" },
+      { "key": "enableHealthCheck", "label": "启用健康检查", "hint": "生成 healthCheck.*", "type": "toggle" },
+      {
+        "key": "healthCheckType",
+        "label": "healthCheck.type",
+        "hint": "TCP 或 HTTP 检查",
+        "type": "select",
+        "options": [
+          { "value": "tcp", "label": "tcp" },
+          { "value": "http", "label": "http" }
+        ],
+        "when": "enableHealthCheck"
+      },
+      {
+        "key": "healthCheckPath",
+        "label": "healthCheck.path",
+        "hint": "HTTP 健康检查路径",
+        "type": "text",
+        "when": { "all": ["enableHealthCheck", { "key": "healthCheckType", "value": "http" }] }
+      },
+      { "key": "healthCheckIntervalSeconds", "label": "healthCheck.intervalSeconds", "hint": "检查间隔", "type": "number", "min": 1, "when": "enableHealthCheck" },
+      { "key": "healthCheckTimeoutSeconds", "label": "healthCheck.timeoutSeconds", "hint": "检查超时", "type": "number", "min": 1, "when": "enableHealthCheck" },
+      { "key": "healthCheckMaxFailed", "label": "healthCheck.maxFailed", "hint": "最大失败次数", "type": "number", "min": 1, "when": "enableHealthCheck" },
+      { "key": "enableProxyProtocol", "label": "启用 Proxy Protocol", "hint": "向本地服务传递源地址", "type": "toggle" },
+      {
+        "key": "proxyProtocolVersion",
+        "label": "transport.proxyProtocolVersion",
+        "hint": "v1 或 v2",
+        "type": "select",
+        "options": [
+          { "value": "v1", "label": "v1" },
+          { "value": "v2", "label": "v2" }
+        ],
+        "when": "enableProxyProtocol"
+      },
+      { "key": "enableMetadatas", "label": "启用 metadatas", "hint": "生成 metadatas.*", "type": "toggle" },
+      { "key": "metadatas", "label": "metadatas", "hint": "键值对，逗号分隔，如 env=prod", "type": "text", "when": "enableMetadatas" }
+    ]
+  },
+  "server": {
+    "state": {
+      "bindAddr": "0.0.0.0",
+      "bindPort": 9550,
+      "proxyBindAddr": "0.0.0.0",
+      "enableUDP": false,
+      "bindUDPPort": 9550,
+      "enableKCP": false,
+      "kcpBindPort": 9550,
+      "enableQUIC": false,
+      "quicBindPort": 9550,
+      "enableTCPMux": false,
+      "tcpmuxHTTPConnectPort": 9554,
+      "authMethod": "token",
+      "authToken": "change-me-token",
+      "authAdditionalScopes": "HeartBeats,NewWorkConns",
+      "maxPoolCount": 5,
+      "heartbeatTimeout": 90,
+      "tlsForce": false,
+      "tlsCertFile": "",
+      "tlsKeyFile": "",
+      "tlsTrustedCaFile": "",
+      "tcpMux": true,
+      "tcpMuxKeepaliveInterval": 30,
+      "natHoleStunServer": "stun.easyvoip.com:3478",
+      "enableHTTP": true,
+      "vhostHTTPPort": 9551,
+      "enableHTTPS": true,
+      "vhostHTTPSPort": 9553,
+      "subDomainHost": "frp.haveways.com",
+      "custom404Page": "/frp/404.html",
+      "enableDashboard": true,
+      "dashboardAddr": "0.0.0.0",
+      "dashboardPort": 9552,
+      "dashboardUser": "admin",
+      "dashboardPassword": "change-me-password",
+      "enableAllowPorts": true,
+      "allowPortStart": 9554,
+      "allowPortEnd": 9570,
+      "enableLog": true,
+      "logTo": "console",
+      "logLevel": "info",
+      "logMaxDays": 3,
+      "oidcIssuer": "https://issuer.example.com/",
+      "oidcAudience": "frp",
+      "oidcSkipExpiryCheck": false,
+      "oidcSkipIssuerCheck": false
+    },
+    "fieldGroups": [
+      {
+        "title": "监听与鉴权",
+        "icon": "KeyRound",
+        "fields": [
+          { "key": "bindAddr", "label": "bindAddr", "hint": "frps 主监听地址", "type": "text" },
+          { "key": "bindPort", "label": "bindPort", "hint": "frpc 连接 frps 的服务端口", "type": "number", "min": 1, "max": 65535 },
+          { "key": "proxyBindAddr", "label": "proxyBindAddr", "hint": "代理监听地址", "type": "text" },
+          {
+            "key": "authMethod",
+            "label": "auth.method",
+            "hint": "鉴权方式",
+            "type": "select",
+            "options": [
+              { "value": "token", "label": "token" },
+              { "value": "oidc", "label": "oidc" }
+            ]
+          },
+          { "key": "authToken", "label": "auth.token", "hint": "服务端和客户端必须一致", "type": "text", "when": { "key": "authMethod", "value": "token" } },
+          { "key": "authAdditionalScopes", "label": "auth.additionalScopes", "hint": "附加鉴权范围，逗号分隔", "type": "text" },
+          { "key": "maxPoolCount", "label": "transport.maxPoolCount", "hint": "最大连接池数量", "type": "number", "min": 0 },
+          { "key": "heartbeatTimeout", "label": "transport.heartbeatTimeout", "hint": "心跳超时秒数", "type": "number", "min": 1 },
+          { "key": "tlsForce", "label": "强制 TLS", "hint": "生成 transport.tls.force", "type": "toggle" },
+          { "key": "tlsCertFile", "label": "transport.tls.certFile", "hint": "服务端证书路径", "type": "text", "when": "tlsForce" },
+          { "key": "tlsKeyFile", "label": "transport.tls.keyFile", "hint": "服务端私钥路径", "type": "text", "when": "tlsForce" },
+          { "key": "tlsTrustedCaFile", "label": "transport.tls.trustedCaFile", "hint": "校验客户端证书的 CA", "type": "text", "when": "tlsForce" },
+          { "key": "tcpMux", "label": "启用 TCP 多路复用", "hint": "生成 transport.tcpMux", "type": "toggle" },
+          { "key": "tcpMuxKeepaliveInterval", "label": "transport.tcpMuxKeepaliveInterval", "hint": "保活间隔", "type": "number", "min": 1, "when": "tcpMux" },
+          { "key": "natHoleStunServer", "label": "natHoleStunServer", "hint": "XTCP/P2P NAT 打洞 STUN 服务", "type": "text" },
+          { "key": "oidcIssuer", "label": "auth.oidc.issuer", "hint": "OIDC issuer", "type": "text", "when": { "key": "authMethod", "value": "oidc" } },
+          { "key": "oidcAudience", "label": "auth.oidc.audience", "hint": "OIDC audience", "type": "text", "when": { "key": "authMethod", "value": "oidc" } },
+          { "key": "oidcSkipExpiryCheck", "label": "auth.oidc.skipExpiryCheck", "hint": "跳过过期检查", "type": "toggle", "when": { "key": "authMethod", "value": "oidc" } },
+          { "key": "oidcSkipIssuerCheck", "label": "auth.oidc.skipIssuerCheck", "hint": "跳过 issuer 检查", "type": "toggle", "when": { "key": "authMethod", "value": "oidc" } }
+        ]
+      },
+      {
+        "title": "协议入口",
+        "icon": "Network",
+        "fields": [
+          { "key": "enableUDP", "label": "启用 UDP/KCP 共用端口", "hint": "生成 bindUDPPort", "type": "toggle" },
+          { "key": "bindUDPPort", "label": "bindUDPPort", "hint": "UDP 监听端口", "type": "number", "min": 1, "max": 65535, "when": "enableUDP" },
+          { "key": "enableKCP", "label": "启用 KCP", "hint": "生成 kcpBindPort", "type": "toggle" },
+          { "key": "kcpBindPort", "label": "kcpBindPort", "hint": "KCP 监听端口", "type": "number", "min": 1, "max": 65535, "when": "enableKCP" },
+          { "key": "enableQUIC", "label": "启用 QUIC", "hint": "生成 quicBindPort", "type": "toggle" },
+          { "key": "quicBindPort", "label": "quicBindPort", "hint": "QUIC 监听端口", "type": "number", "min": 1, "max": 65535, "when": "enableQUIC" },
+          { "key": "enableTCPMux", "label": "启用 TCPMUX", "hint": "生成 tcpmuxHTTPConnectPort", "type": "toggle" },
+          { "key": "tcpmuxHTTPConnectPort", "label": "tcpmuxHTTPConnectPort", "hint": "HTTP CONNECT 入口", "type": "number", "min": 1, "max": 65535, "when": "enableTCPMux" }
+        ]
+      },
+      {
+        "title": "HTTP/HTTPS 与管理",
+        "icon": "Globe",
+        "fields": [
+          { "key": "enableHTTP", "label": "启用 HTTP vhost", "hint": "生成 vhostHTTPPort", "type": "toggle" },
+          { "key": "vhostHTTPPort", "label": "vhostHTTPPort", "hint": "HTTP 入口端口", "type": "number", "min": 1, "max": 65535, "when": "enableHTTP" },
+          { "key": "enableHTTPS", "label": "启用 HTTPS vhost", "hint": "生成 vhostHTTPSPort", "type": "toggle" },
+          { "key": "vhostHTTPSPort", "label": "vhostHTTPSPort", "hint": "HTTPS 入口端口", "type": "number", "min": 1, "max": 65535, "when": "enableHTTPS" },
+          { "key": "subDomainHost", "label": "subDomainHost", "hint": "客户端 subdomain 的公共后缀", "type": "text" },
+          { "key": "custom404Page", "label": "custom404Page", "hint": "未匹配时返回的页面路径", "type": "text" },
+          { "key": "enableDashboard", "label": "启用 Dashboard", "hint": "生成 webServer 配置", "type": "toggle" },
+          { "key": "dashboardAddr", "label": "webServer.addr", "hint": "Dashboard 地址", "type": "text", "when": "enableDashboard" },
+          { "key": "dashboardPort", "label": "webServer.port", "hint": "Dashboard 端口", "type": "number", "min": 1, "max": 65535, "when": "enableDashboard" },
+          { "key": "dashboardUser", "label": "webServer.user", "hint": "Dashboard 用户名", "type": "text", "when": "enableDashboard" },
+          { "key": "dashboardPassword", "label": "webServer.password", "hint": "Dashboard 密码", "type": "text", "when": "enableDashboard" }
+        ]
+      },
+      {
+        "title": "限制与日志",
+        "icon": "ClipboardList",
+        "fields": [
+          { "key": "enableAllowPorts", "label": "启用 allowPorts", "hint": "限制客户端可用 remotePort", "type": "toggle" },
+          { "key": "allowPortStart", "label": "allowPorts.start", "hint": "允许端口起点", "type": "number", "min": 1, "max": 65535, "when": "enableAllowPorts" },
+          { "key": "allowPortEnd", "label": "allowPorts.end", "hint": "允许端口终点", "type": "number", "min": 1, "max": 65535, "when": "enableAllowPorts" },
+          { "key": "enableLog", "label": "启用日志配置", "hint": "生成 log.*", "type": "toggle" },
+          { "key": "logTo", "label": "log.to", "hint": "console 或日志文件路径", "type": "text", "when": "enableLog" },
+          {
+            "key": "logLevel",
+            "label": "log.level",
+            "hint": "trace/debug/info/warn/error",
+            "type": "select",
+            "options": [
+              { "value": "trace", "label": "trace" },
+              { "value": "debug", "label": "debug" },
+              { "value": "info", "label": "info" },
+              { "value": "warn", "label": "warn" },
+              { "value": "error", "label": "error" }
+            ],
+            "when": "enableLog"
+          },
+          { "key": "logMaxDays", "label": "log.maxDays", "hint": "日志保留天数", "type": "number", "min": 1, "when": "enableLog" }
+        ]
+      }
+    ]
+  },
+  "client": {
+    "state": {
+      "serverAddr": "frp.haveways.com",
+      "serverPort": 9550,
+      "user": "ROG",
+      "transportProtocol": "tcp",
+      "loginFailExit": true,
+      "heartbeatInterval": 30,
+      "heartbeatTimeout": 90,
+      "tcpMux": true,
+      "tcpMuxKeepaliveInterval": 30,
+      "proxyURL": "",
+      "tlsEnable": false,
+      "tlsServerName": "",
+      "tlsCertFile": "",
+      "tlsKeyFile": "",
+      "tlsTrustedCaFile": "",
+      "tlsDisableCustomTLSFirstByte": true,
+      "authMethod": "token",
+      "authToken": "change-me-token",
+      "authAdditionalScopes": "HeartBeats,NewWorkConns",
+      "oidcClientID": "frpc",
+      "oidcClientSecret": "change-me-client-secret",
+      "oidcAudience": "frp",
+      "oidcTokenEndpointURL": "https://issuer.example.com/oauth2/token",
+      "oidcScope": "",
+      "oidcTrustedCaFile": "",
+      "oidcInsecureSkipVerify": false,
+      "oidcProxyURL": "",
+      "oidcAdditionalEndpointParams": "",
+      "enableAdmin": true,
+      "adminAddr": "0.0.0.0",
+      "adminPort": 7400,
+      "adminUser": "admin",
+      "adminPassword": "change-me-password",
+      "poolCount": 5,
+      "enableStartList": false,
+      "extraStartNames": ""
+    },
+    "fieldGroups": [
+      {
+        "title": "连接 frps",
+        "icon": "Cable",
+        "fields": [
+          { "key": "serverAddr", "label": "serverAddr", "hint": "frps 所在域名或 IP", "type": "text" },
+          { "key": "serverPort", "label": "serverPort", "hint": "对应 frps bindPort", "type": "number", "min": 1, "max": 65535 },
+          { "key": "user", "label": "user", "hint": "隔离不同用户的代理名称", "type": "text" },
+          {
+            "key": "transportProtocol",
+            "label": "transport.protocol",
+            "hint": "tcp/kcp/quic/websocket/wss",
+            "type": "select",
+            "options": [
+              { "value": "tcp", "label": "tcp" },
+              { "value": "kcp", "label": "kcp" },
+              { "value": "quic", "label": "quic" },
+              { "value": "websocket", "label": "websocket" },
+              { "value": "wss", "label": "wss" }
+            ]
+          },
+          { "key": "loginFailExit", "label": "loginFailExit", "hint": "登录失败后退出", "type": "toggle" },
+          { "key": "heartbeatInterval", "label": "transport.heartbeatInterval", "hint": "心跳间隔", "type": "number", "min": 1 },
+          { "key": "heartbeatTimeout", "label": "transport.heartbeatTimeout", "hint": "心跳超时", "type": "number", "min": 1 },
+          { "key": "tcpMux", "label": "启用 TCP 多路复用", "hint": "生成 transport.tcpMux", "type": "toggle" },
+          { "key": "tcpMuxKeepaliveInterval", "label": "transport.tcpMuxKeepaliveInterval", "hint": "保活间隔", "type": "number", "min": 1, "when": "tcpMux" },
+          { "key": "proxyURL", "label": "transport.proxyURL", "hint": "通过代理连接 frps", "type": "text" },
+          { "key": "tlsEnable", "label": "启用 TLS", "hint": "生成 transport.tls.enable", "type": "toggle" },
+          { "key": "tlsServerName", "label": "transport.tls.serverName", "hint": "TLS SNI/serverName", "type": "text", "when": "tlsEnable" },
+          { "key": "tlsCertFile", "label": "transport.tls.certFile", "hint": "客户端证书路径", "type": "text", "when": "tlsEnable" },
+          { "key": "tlsKeyFile", "label": "transport.tls.keyFile", "hint": "客户端私钥路径", "type": "text", "when": "tlsEnable" },
+          { "key": "tlsTrustedCaFile", "label": "transport.tls.trustedCaFile", "hint": "校验服务端证书的 CA", "type": "text", "when": "tlsEnable" },
+          { "key": "tlsDisableCustomTLSFirstByte", "label": "transport.tls.disableCustomTLSFirstByte", "hint": "端口复用 vhostHTTPSPort 时通常设为 false", "type": "toggle", "when": "tlsEnable" },
+          {
+            "key": "authMethod",
+            "label": "auth.method",
+            "hint": "鉴权方式",
+            "type": "select",
+            "options": [
+              { "value": "token", "label": "token" },
+              { "value": "oidc", "label": "oidc" }
+            ]
+          },
+          { "key": "authToken", "label": "auth.token", "hint": "必须与 frps auth.token 一致", "type": "text", "when": { "key": "authMethod", "value": "token" } },
+          { "key": "oidcClientID", "label": "auth.oidc.clientID", "hint": "OIDC client id", "type": "text", "when": { "key": "authMethod", "value": "oidc" } },
+          { "key": "oidcClientSecret", "label": "auth.oidc.clientSecret", "hint": "OIDC client secret", "type": "text", "when": { "key": "authMethod", "value": "oidc" } },
+          { "key": "oidcAudience", "label": "auth.oidc.audience", "hint": "OIDC audience", "type": "text", "when": { "key": "authMethod", "value": "oidc" } },
+          { "key": "oidcTokenEndpointURL", "label": "auth.oidc.tokenEndpointURL", "hint": "Token endpoint URL", "type": "text", "when": { "key": "authMethod", "value": "oidc" } },
+          { "key": "oidcScope", "label": "auth.oidc.scope", "hint": "OIDC scope，可选", "type": "text", "when": { "key": "authMethod", "value": "oidc" } },
+          { "key": "oidcTrustedCaFile", "label": "auth.oidc.trustedCaFile", "hint": "OIDC endpoint CA", "type": "text", "when": { "key": "authMethod", "value": "oidc" } },
+          { "key": "oidcInsecureSkipVerify", "label": "auth.oidc.insecureSkipVerify", "hint": "跳过 OIDC TLS 校验", "type": "toggle", "when": { "key": "authMethod", "value": "oidc" } },
+          { "key": "oidcProxyURL", "label": "auth.oidc.proxyURL", "hint": "访问 OIDC 的代理 URL", "type": "text", "when": { "key": "authMethod", "value": "oidc" } },
+          { "key": "oidcAdditionalEndpointParams", "label": "auth.oidc.additionalEndpointParams", "hint": "键值对，逗号分隔", "type": "textarea", "when": { "key": "authMethod", "value": "oidc" } },
+          { "key": "authAdditionalScopes", "label": "auth.additionalScopes", "hint": "附加鉴权范围", "type": "text" },
+          { "key": "poolCount", "label": "transport.poolCount", "hint": "预建立连接池数量", "type": "number", "min": 0 },
+          { "key": "enableStartList", "label": "启用 start 列表", "hint": "只启动指定代理/访问者", "type": "toggle" },
+          { "key": "extraStartNames", "label": "start 追加名称", "hint": "额外启动项，逗号分隔", "type": "text", "when": "enableStartList" }
+        ]
+      },
+      {
+        "title": "客户端 AdminServer",
+        "icon": "Monitor",
+        "fields": [
+          { "key": "enableAdmin", "label": "启用 AdminServer", "hint": "生成 webServer 配置", "type": "toggle" },
+          { "key": "adminAddr", "label": "webServer.addr", "hint": "管理面板监听地址", "type": "text", "when": "enableAdmin" },
+          { "key": "adminPort", "label": "webServer.port", "hint": "管理面板端口", "type": "number", "min": 1, "max": 65535, "when": "enableAdmin" },
+          { "key": "adminUser", "label": "webServer.user", "hint": "用户名", "type": "text", "when": "enableAdmin" },
+          { "key": "adminPassword", "label": "webServer.password", "hint": "密码", "type": "text", "when": "enableAdmin" }
+        ]
+      }
+    ]
+  }
+}

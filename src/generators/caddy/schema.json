@@ -1,0 +1,356 @@
+{
+  "$schema": "config-generator/v1",
+  "id": "caddy",
+  "global": {
+    "state": {
+      "autoHttps": "on",
+      "admin": "off",
+      "protocols": "h1,h2,h3",
+      "enableGlobalLog": false,
+      "logLevel": "INFO"
+    },
+    "fieldGroups": [
+      {
+        "title": "全局 Options",
+        "icon": "Settings2",
+        "fields": [
+          {
+            "key": "autoHttps",
+            "label": "auto_https",
+            "hint": "Caddy 全局 HTTPS 行为",
+            "type": "select",
+            "options": [
+              { "value": "on", "label": "on" },
+              { "value": "off", "label": "off" },
+              { "value": "disable_redirects", "label": "disable_redirects" },
+              { "value": "disable_certs", "label": "disable_certs" }
+            ]
+          },
+          { "key": "admin", "label": "admin", "hint": "管理 API 地址或 off", "type": "text" },
+          { "key": "protocols", "label": "servers.protocols", "hint": "逗号分隔，如 h1,h2,h3", "type": "text" },
+          { "key": "enableGlobalLog", "label": "启用全局 log", "hint": "生成全局 log level", "type": "toggle" },
+          {
+            "key": "logLevel",
+            "label": "log.level",
+            "hint": "DEBUG/INFO/WARN/ERROR",
+            "type": "select",
+            "options": [
+              { "value": "DEBUG", "label": "DEBUG" },
+              { "value": "INFO", "label": "INFO" },
+              { "value": "WARN", "label": "WARN" },
+              { "value": "ERROR", "label": "ERROR" }
+            ],
+            "when": "enableGlobalLog"
+          }
+        ]
+      }
+    ]
+  },
+  "site": {
+    "defaults": {
+      "enableAutoHttps": true,
+      "email": "admin@example.com",
+      "tlsMode": "auto",
+      "tlsCert": "/etc/caddy/certs/fullchain.pem",
+      "tlsKey": "/etc/caddy/certs/privkey.pem",
+      "enableAccessLog": false,
+      "accessLogPath": "/var/log/caddy/access.log",
+      "basicAuth": "",
+      "enableEncode": true,
+      "encoders": "gzip,zstd",
+      "root": "/usr/share/caddy",
+      "headers": "X-Frame-Options=SAMEORIGIN,X-Content-Type-Options=nosniff"
+    },
+    "first": {
+      "host": "example.com"
+    },
+    "next": {
+      "host": "app-{serial}.example.com"
+    },
+    "fields": [
+      {
+        "key": "host",
+        "label": "站点地址",
+        "hint": "域名或 :端口，如 example.com 或 :8080",
+        "type": "text"
+      },
+      {
+        "key": "enableAutoHttps",
+        "label": "自动 HTTPS",
+        "hint": "域名站点默认自动签发证书",
+        "type": "toggle"
+      },
+      {
+        "key": "email",
+        "label": "ACME 邮箱",
+        "hint": "用于证书签发通知",
+        "type": "text",
+        "when": "enableAutoHttps"
+      },
+      {
+        "key": "tlsMode",
+        "label": "tls",
+        "hint": "站点级 TLS 模式",
+        "type": "select",
+        "options": [
+          { "value": "auto", "label": "auto" },
+          { "value": "internal", "label": "internal" },
+          { "value": "custom", "label": "custom cert/key" }
+        ]
+      },
+      { "key": "tlsCert", "label": "tls cert", "hint": "自定义证书路径", "type": "text", "when": { "key": "tlsMode", "value": "custom" } },
+      { "key": "tlsKey", "label": "tls key", "hint": "自定义私钥路径", "type": "text", "when": { "key": "tlsMode", "value": "custom" } },
+      { "key": "enableAccessLog", "label": "启用站点 log", "hint": "生成站点访问日志", "type": "toggle" },
+      { "key": "accessLogPath", "label": "log output file", "hint": "访问日志文件路径", "type": "text", "when": "enableAccessLog" },
+      { "key": "basicAuth", "label": "basic_auth", "hint": "用户=哈希，逗号分隔，如 admin=$2a$14$...", "type": "textarea" },
+      {
+        "key": "enableEncode",
+        "label": "启用压缩",
+        "hint": "生成 encode 指令",
+        "type": "toggle"
+      },
+      {
+        "key": "encoders",
+        "label": "encode",
+        "hint": "压缩算法，逗号分隔",
+        "type": "text",
+        "when": "enableEncode"
+      },
+      {
+        "key": "root",
+        "label": "默认 root",
+        "hint": "静态文件根目录",
+        "type": "text"
+      },
+      {
+        "key": "headers",
+        "label": "响应头",
+        "hint": "键值对，逗号分隔",
+        "type": "textarea"
+      }
+    ]
+  },
+  "handle": {
+    "defaults": {
+      "path": "/*",
+      "type": "file_server",
+      "upstream": "app:3000,app2:3000",
+      "lbPolicy": "round_robin",
+      "healthUri": "",
+      "headerUp": "X-Forwarded-Proto=https",
+      "headerDown": "",
+      "transport": "default",
+      "enableStreaming": false,
+      "flushInterval": "-1",
+      "transportDialTimeout": "",
+      "transportReadTimeout": "",
+      "transportWriteTimeout": "",
+      "root": "/usr/share/caddy",
+      "rewriteTo": "/index.html",
+      "redirectTarget": "https://example.com{uri}",
+      "respondBody": "ok",
+      "respondStatus": 200,
+      "headers": ""
+    },
+    "fields": [
+      {
+        "key": "host",
+        "label": "归属站点",
+        "hint": "填写对应 site 的站点地址",
+        "type": "text"
+      },
+      {
+        "key": "path",
+        "label": "匹配路径",
+        "hint": "如 /*、/api/*",
+        "type": "text"
+      },
+      {
+        "key": "type",
+        "label": "处理类型",
+        "hint": "静态文件、反向代理、重定向或响应",
+        "type": "select",
+        "options": [
+          { "value": "file_server", "label": "file_server" },
+          { "value": "reverse_proxy", "label": "reverse_proxy" },
+          { "value": "redir", "label": "redir" },
+          { "value": "respond", "label": "respond" }
+        ]
+      },
+      {
+        "key": "root",
+        "label": "root",
+        "hint": "静态文件目录",
+        "type": "text",
+        "when": { "key": "type", "value": "file_server" }
+      },
+      {
+        "key": "rewriteTo",
+        "label": "try_files fallback",
+        "hint": "SPA fallback，如 /index.html",
+        "type": "text",
+        "when": { "key": "type", "value": "file_server" }
+      },
+      {
+        "key": "upstream",
+        "label": "to",
+        "hint": "反向代理上游，多个用逗号分隔，如 app:3000,app2:3000",
+        "type": "text",
+        "when": { "key": "type", "value": "reverse_proxy" }
+      },
+      {
+        "key": "lbPolicy",
+        "label": "lb_policy",
+        "hint": "多上游负载策略",
+        "type": "select",
+        "options": [
+          { "value": "round_robin", "label": "round_robin" },
+          { "value": "random", "label": "random" },
+          { "value": "least_conn", "label": "least_conn" },
+          { "value": "ip_hash", "label": "ip_hash" },
+          { "value": "first", "label": "first" }
+        ],
+        "when": { "key": "type", "value": "reverse_proxy" }
+      },
+      {
+        "key": "healthUri",
+        "label": "health_uri",
+        "hint": "主动健康检查路径，如 /health",
+        "type": "text",
+        "when": { "key": "type", "value": "reverse_proxy" }
+      },
+      {
+        "key": "headerUp",
+        "label": "header_up",
+        "hint": "发往上游的请求头，键值对逗号分隔",
+        "type": "textarea",
+        "when": { "key": "type", "value": "reverse_proxy" }
+      },
+      {
+        "key": "headerDown",
+        "label": "header_down",
+        "hint": "返回客户端前的响应头，键值对逗号分隔",
+        "type": "textarea",
+        "when": { "key": "type", "value": "reverse_proxy" }
+      },
+      {
+        "key": "transport",
+        "label": "transport http",
+        "hint": "上游为 HTTPS 或自签证书时启用",
+        "type": "select",
+        "options": [
+          { "value": "default", "label": "default" },
+          { "value": "tls", "label": "tls" },
+          { "value": "tls_insecure_skip_verify", "label": "tls_insecure_skip_verify" }
+        ],
+        "when": { "key": "type", "value": "reverse_proxy" }
+      },
+      {
+        "key": "enableStreaming",
+        "label": "SSE / 流式响应",
+        "hint": "生成 flush_interval，适合 SSE、流式接口",
+        "type": "toggle",
+        "when": { "key": "type", "value": "reverse_proxy" }
+      },
+      {
+        "key": "flushInterval",
+        "label": "flush_interval",
+        "hint": "SSE 常用 -1，立即刷新响应",
+        "type": "text",
+        "when": { "all": [{ "key": "type", "value": "reverse_proxy" }, "enableStreaming"] }
+      },
+      {
+        "key": "transportDialTimeout",
+        "label": "dial_timeout",
+        "hint": "上游连接超时，如 3s，留空不生成",
+        "type": "text",
+        "when": { "key": "type", "value": "reverse_proxy" }
+      },
+      {
+        "key": "transportReadTimeout",
+        "label": "read_timeout",
+        "hint": "读上游超时，长连接可设 0 或留空",
+        "type": "text",
+        "when": { "key": "type", "value": "reverse_proxy" }
+      },
+      {
+        "key": "transportWriteTimeout",
+        "label": "write_timeout",
+        "hint": "写上游超时，长连接可设 0 或留空",
+        "type": "text",
+        "when": { "key": "type", "value": "reverse_proxy" }
+      },
+      {
+        "key": "redirectTarget",
+        "label": "redir 目标",
+        "hint": "重定向目标",
+        "type": "text",
+        "when": { "key": "type", "value": "redir" }
+      },
+      {
+        "key": "respondBody",
+        "label": "respond 内容",
+        "hint": "直接响应内容",
+        "type": "text",
+        "when": { "key": "type", "value": "respond" }
+      },
+      {
+        "key": "respondStatus",
+        "label": "respond 状态码",
+        "hint": "HTTP 状态码",
+        "type": "number",
+        "min": 100,
+        "max": 599,
+        "when": { "key": "type", "value": "respond" }
+      },
+      {
+        "key": "headers",
+        "label": "额外响应头",
+        "hint": "键值对，逗号分隔",
+        "type": "textarea"
+      }
+    ],
+    "typeOptions": [
+      { "value": "file_server", "label": "file_server" },
+      { "value": "reverse_proxy", "label": "reverse_proxy" },
+      { "value": "redir", "label": "redir" },
+      { "value": "respond", "label": "respond" }
+    ]
+  },
+  "blocks": {
+    "site": {
+      "title": "Site",
+      "icon": "Globe",
+      "addLabel": "新增 Site",
+      "add": {
+        "key": "value",
+        "label": "类型",
+        "hint": "新增一个站点块"
+      },
+      "emptyTitle": "还没有 site",
+      "emptyText": "新增 site 后开始配置域名和 HTTPS。",
+      "groupTitle": "Site 参数",
+      "groupIcon": "Settings2"
+    },
+    "handle": {
+      "title": "Handle",
+      "icon": "Route",
+      "addLabel": "新增 Handle",
+      "add": {
+        "key": "value",
+        "label": "Handle 类型",
+        "hint": "新增静态、反代、重定向或响应规则",
+        "options": [
+          { "value": "file_server", "label": "file_server" },
+          { "value": "reverse_proxy", "label": "reverse_proxy" },
+          { "value": "redir", "label": "redir" },
+          { "value": "respond", "label": "respond" }
+        ]
+      },
+      "emptyTitle": "还没有 handle",
+      "emptyText": "新增 handle 后配置路径和处理方式。",
+      "groupTitle": "Handle 参数",
+      "groupIcon": "Route"
+    }
+  }
+}

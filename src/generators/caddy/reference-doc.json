@@ -1,0 +1,85 @@
+{
+  "$schema": "config-reference/v1",
+  "tool": "caddy",
+  "description": "Caddyfile 配置项参考, 供可视化生成器消费",
+  "groups": [
+    {
+      "name": "全局选项(顶部块)",
+      "items": [
+        { "field": "auto_https", "syntax": "auto_https on|off|disable_redirects|disable_certs|ignore_certs", "default": "on", "required": false, "scope": "global", "desc": "HTTPS 行为, on=自动签发+重定向", "example": "auto_https disable_redirects" },
+        { "field": "admin", "syntax": "admin off | admin <addr>", "default": "localhost:2019", "required": false, "scope": "global", "desc": "管理 API", "example": "admin off" },
+        { "field": "servers", "syntax": "servers { protocols h1 h2 h3 }", "default": "h1 h2 h3", "required": false, "scope": "global", "desc": "服务器参数与协议", "example": "servers {\n  protocols h1 h2 h3\n}" },
+        { "field": "log", "syntax": "log { level <lvl> output <dest> }", "default": "level INFO", "required": false, "scope": "global", "desc": "全局日志", "example": "log {\n  level INFO\n  output file /var/log/caddy.log\n}" },
+        { "field": "storage", "syntax": "storage file_system { root <path> }", "default": "~/.local/share/caddy", "required": false, "scope": "global", "desc": "存储后端", "example": "storage file_system {\n  root /var/lib/caddy\n}" },
+        { "field": "local_certs", "syntax": "local_certs", "default": "—", "required": false, "scope": "global", "desc": "用内部 CA(内网/开发, 不签公网证书)", "example": "local_certs" },
+        { "field": "persist_config", "syntax": "persist_config off", "default": "on", "required": false, "scope": "global", "desc": "持久化配置", "example": "persist_config off" },
+        { "field": "default_sni", "syntax": "default_sni <host>", "default": "—", "required": false, "scope": "global", "desc": "默认 SNI", "example": "default_sni example.com" }
+      ]
+    },
+    {
+      "name": "站点地址形式",
+      "items": [
+        { "field": "域名", "syntax": "example.com", "default": "—", "required": false, "scope": "site", "desc": "域名, 自动 HTTPS", "example": "example.com { }" },
+        { "field": "通配符", "syntax": "*.example.com", "default": "—", "required": false, "scope": "site", "desc": "通配符域名", "example": "*.example.com { }" },
+        { "field": "端口", "syntax": ":<port>", "default": "—", "required": false, "scope": "site", "desc": "仅监听端口(HTTP)", "example": ":8080 { }" },
+        { "field": "https://", "syntax": "https://example.com", "default": "—", "required": false, "scope": "site", "desc": "强制 HTTPS", "example": "https://example.com { }" },
+        { "field": "http://", "syntax": "http://example.com", "default": "—", "required": false, "scope": "site", "desc": "强制 HTTP", "example": "http://example.com { }" },
+        { "field": "localhost", "syntax": "localhost[:<port>]", "default": "—", "required": false, "scope": "site", "desc": "本地, 自动用内部 CA", "example": "localhost:8080 { }" }
+      ]
+    },
+    {
+      "name": "站点块指令",
+      "items": [
+        { "field": "root", "syntax": "root [<matcher>] <path>", "default": "—", "required": false, "scope": "site", "desc": "文档根目录", "example": "root * /srv" },
+        { "field": "file_server", "syntax": "file_server [browse] [root <path>]", "default": "—", "required": false, "scope": "site", "desc": "静态文件服务", "example": "file_server browse" },
+        { "field": "reverse_proxy", "syntax": "reverse_proxy [<matcher>] <upstream>...", "default": "—", "required": false, "scope": "site", "desc": "反向代理", "example": "reverse_proxy app:3000" },
+        { "field": "encode", "syntax": "encode [<matcher>] <codec>...", "default": "—", "required": false, "scope": "site", "desc": "响应压缩", "example": "encode gzip zstd" },
+        { "field": "tls", "syntax": "tls <email> | tls <cert> <key> | tls internal", "default": "自动签发", "required": false, "scope": "site", "desc": "TLS 配置", "example": "tls internal" },
+        { "field": "header", "syntax": "header [<matcher>] [<name> <value>]", "default": "—", "required": false, "scope": "site", "desc": "设响应头", "example": "header X-Frame-Options DENY" },
+        { "field": "redir", "syntax": "redir [<matcher>] <to> [<code>]", "default": "—", "required": false, "scope": "site", "desc": "重定向", "example": "redir https://{host}{uri} permanent" },
+        { "field": "rewrite", "syntax": "rewrite [<matcher>] <to>", "default": "—", "required": false, "scope": "site", "desc": "内部重写(不改 URL)", "example": "rewrite * /index.html" },
+        { "field": "respond", "syntax": "respond [<matcher>] <body> [<status>]", "default": "—", "required": false, "scope": "site", "desc": "直接返回响应", "example": "respond /health \"ok\" 200" },
+        { "field": "try_files", "syntax": "try_files [<matcher>] <file>... <fallback>", "default": "—", "required": false, "scope": "site", "desc": "依次查找", "example": "try_files {path} /index.html" },
+        { "field": "basic_auth", "syntax": "basic_auth [<matcher>] { <user> <hash> }", "default": "—", "required": false, "scope": "site", "desc": "基本认证", "example": "basic_auth {\n  bob $2a$14$...\n}" },
+        { "field": "log", "syntax": "log { output <dest> format <fmt> }", "default": "—", "required": false, "scope": "site", "desc": "访问日志", "example": "log {\n  output file /var/log/access.log\n}" },
+        { "field": "handle", "syntax": "handle [<matcher>] { }", "default": "—", "required": false, "scope": "site", "desc": "互斥路由块(类似 switch)", "example": "handle /api/* {\n  reverse_proxy app:3000\n}" },
+        { "field": "handle_path", "syntax": "handle_path <prefix> { }", "default": "—", "required": false, "scope": "site", "desc": "带前缀剥离的 handle", "example": "handle_path /api/* {\n  reverse_proxy app:3000\n}" },
+        { "field": "route", "syntax": "route [<matcher>] { }", "default": "—", "required": false, "scope": "site", "desc": "顺序路由块(指令按书写顺序执行)", "example": "route { ... }" },
+        { "field": "php_fastcgi", "syntax": "php_fastcgi [<matcher>] <upstream>", "default": "—", "required": false, "scope": "site", "desc": "FastCGI(PHP)", "example": "php_fastcgi php:9000" },
+        { "field": "rate_limit", "syntax": "rate_limit { zone <name> { events <n> window <t> } }", "default": "—", "required": false, "scope": "site", "desc": "限流(v2.7+, 企业功能)", "example": "rate_limit {\n  zone api {\n    events 100\n    window 1s\n  }\n}" },
+        { "field": "templates", "syntax": "templates [<matcher>] [root <path>]", "default": "—", "required": false, "scope": "site", "desc": "服务端模板渲染", "example": "templates" }
+      ]
+    },
+    {
+      "name": "matcher 匹配器",
+      "items": [
+        { "field": "命名 matcher", "syntax": "@<name> { <条件>... }", "default": "—", "required": false, "scope": "matcher", "desc": "命名匹配器, 复用", "example": "@api {\n  path /api/*\n  method GET\n}" },
+        { "field": "path", "syntax": "path <pattern>...", "default": "—", "required": false, "scope": "matcher", "desc": "路径匹配", "example": "path /api/* /v1/*" },
+        { "field": "method", "syntax": "method <verb>...", "default": "—", "required": false, "scope": "matcher", "desc": "HTTP 方法", "example": "method GET POST" },
+        { "field": "host", "syntax": "host <domain>...", "default": "—", "required": false, "scope": "matcher", "desc": "主机名", "example": "host api.example.com" },
+        { "field": "header", "syntax": "header <name> [<value>]", "default": "—", "required": false, "scope": "matcher", "desc": "请求头", "example": "header Authorization *" },
+        { "field": "query", "syntax": "query <name>=<value>", "default": "—", "required": false, "scope": "matcher", "desc": "查询参数", "example": "query token=abc" },
+        { "field": "expression", "syntax": "expression <CEL>", "default": "—", "required": false, "scope": "matcher", "desc": "CEL 表达式", "example": "expression {http.request.method} == \"GET\"" },
+        { "field": "protocol", "syntax": "protocol http|https", "default": "—", "required": false, "scope": "matcher", "desc": "协议", "example": "protocol https" },
+        { "field": "remote_ip", "syntax": "remote_ip <range>...", "default": "—", "required": false, "scope": "matcher", "desc": "客户端 IP 范围", "example": "remote_ip 10.0.0.0/8" },
+        { "field": "not", "syntax": "not { <条件> }", "default": "—", "required": false, "scope": "matcher", "desc": "取反", "example": "not { path /health }" }
+      ]
+    },
+    {
+      "name": "reverse_proxy 子指令",
+      "items": [
+        { "field": "to", "syntax": "to <upstream>...", "default": "—", "required": true, "scope": "reverse_proxy", "desc": "上游地址(可多个做负载均衡)", "example": "to app1:3000 app2:3000" },
+        { "field": "lb_policy", "syntax": "lb_policy round_robin|random|least_conn|ip_hash|first", "default": "round_robin", "required": false, "scope": "reverse_proxy", "desc": "负载均衡策略", "example": "lb_policy least_conn" },
+        { "field": "health_uri", "syntax": "health_uri <path>", "default": "—", "required": false, "scope": "reverse_proxy", "desc": "健康检查路径", "example": "health_uri /health" },
+        { "field": "health_interval", "syntax": "health_interval <duration>", "default": "30s", "required": false, "scope": "reverse_proxy", "desc": "健康检查间隔", "example": "health_interval 10s" },
+        { "field": "health_timeout", "syntax": "health_timeout <duration>", "default": "5s", "required": false, "scope": "reverse_proxy", "desc": "健康检查超时", "example": "health_timeout 3s" },
+        { "field": "health_status", "syntax": "health_status <code>...", "default": "2xx", "required": false, "scope": "reverse_proxy", "desc": "健康状态码", "example": "health_status 200" },
+        { "field": "fail_duration", "syntax": "fail_duration <duration>", "default": "30s", "required": false, "scope": "reverse_proxy", "desc": "标记不健康的时长", "example": "fail_duration 10s" },
+        { "field": "header_up", "syntax": "header_up <name> [<value>]", "default": "—", "required": false, "scope": "reverse_proxy", "desc": "改写发往上游的请求头", "example": "header_up X-Real-IP {remote_host}" },
+        { "field": "header_down", "syntax": "header_down <name> [<value>]", "default": "—", "required": false, "scope": "reverse_proxy", "desc": "改写上游返回的响应头", "example": "header_down Set-Cookie {http.reverse_proxy.upstream.host}" },
+        { "field": "transport", "syntax": "transport http { tls tls_insecure_skip_verify dial_timeout read_timeout write_timeout }", "default": "http", "required": false, "scope": "reverse_proxy", "desc": "传输层配置, 可设置上游 TLS 和超时", "example": "transport http {\n  tls\n  read_timeout 0\n  write_timeout 0\n}" },
+        { "field": "flush_interval", "syntax": "flush_interval <duration|-1>", "default": "-1(自动)", "required": false, "scope": "reverse_proxy", "desc": "流式刷新间隔, 用于 SSE/流式响应", "example": "flush_interval -1" }
+      ]
+    }
+  ]
+}

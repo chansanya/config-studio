@@ -1,0 +1,40 @@
+{
+  "tool": "redis",
+  "file": "redis.conf",
+  "groups": [
+    {
+      "name": "监听与安全",
+      "items": [
+        { "field": "bind", "syntax": "bind <addr> [addr ...]", "default": "127.0.0.1 -::1", "required": false, "scope": "network", "desc": "监听地址", "example": "bind 127.0.0.1 -::1" },
+        { "field": "port", "syntax": "port <number>", "default": "6379", "required": false, "scope": "network", "desc": "TCP 监听端口", "example": "port 6379" },
+        { "field": "protected-mode", "syntax": "protected-mode yes|no", "default": "yes", "required": false, "scope": "security", "desc": "保护模式", "example": "protected-mode yes" },
+        { "field": "requirepass", "syntax": "requirepass <password>", "default": "—", "required": false, "scope": "security", "desc": "访问密码", "example": "requirepass change-me" },
+        { "field": "aclfile", "syntax": "aclfile <path>", "default": "—", "required": false, "scope": "security", "desc": "ACL 用户文件", "example": "aclfile /etc/redis/users.acl" },
+        { "field": "tls-port", "syntax": "tls-port <number>", "default": "0", "required": false, "scope": "security", "desc": "TLS 监听端口", "example": "tls-port 6380" }
+      ]
+    },
+    {
+      "name": "运行与持久化",
+      "items": [
+        { "field": "timeout", "syntax": "timeout <seconds>", "default": "0", "required": false, "scope": "runtime", "desc": "客户端空闲超时", "example": "timeout 0" },
+        { "field": "tcp-keepalive", "syntax": "tcp-keepalive <seconds>", "default": "300", "required": false, "scope": "runtime", "desc": "TCP keepalive", "example": "tcp-keepalive 300" },
+        { "field": "databases", "syntax": "databases <number>", "default": "16", "required": false, "scope": "runtime", "desc": "逻辑数据库数量", "example": "databases 16" },
+        { "field": "dir", "syntax": "dir <path>", "default": "./", "required": false, "scope": "persistence", "desc": "数据文件目录", "example": "dir /data" },
+        { "field": "save", "syntax": "save <seconds> <changes>", "default": "900 1 / 300 10 / 60 10000", "required": false, "scope": "persistence", "desc": "RDB 保存规则", "example": "save 900 1" },
+        { "field": "appendonly", "syntax": "appendonly yes|no", "default": "no", "required": false, "scope": "persistence", "desc": "是否开启 AOF", "example": "appendonly yes" },
+        { "field": "appendfsync", "syntax": "appendfsync always|everysec|no", "default": "everysec", "required": false, "scope": "persistence", "desc": "AOF 刷盘策略", "example": "appendfsync everysec" }
+      ]
+    },
+    {
+      "name": "内存与观测",
+      "items": [
+        { "field": "maxmemory", "syntax": "maxmemory <bytes|kb|mb|gb>", "default": "0", "required": false, "scope": "memory", "desc": "最大内存", "example": "maxmemory 256mb" },
+        { "field": "maxmemory-policy", "syntax": "maxmemory-policy <policy>", "default": "noeviction", "required": false, "scope": "memory", "desc": "内存淘汰策略", "example": "maxmemory-policy allkeys-lru" },
+        { "field": "replicaof", "syntax": "replicaof <host> <port>", "default": "—", "required": false, "scope": "replication", "desc": "配置为副本", "example": "replicaof 10.0.0.10 6379" },
+        { "field": "loglevel", "syntax": "loglevel debug|verbose|notice|warning", "default": "notice", "required": false, "scope": "observability", "desc": "日志级别", "example": "loglevel notice" },
+        { "field": "slowlog-log-slower-than", "syntax": "slowlog-log-slower-than <microseconds>", "default": "10000", "required": false, "scope": "observability", "desc": "慢查询阈值", "example": "slowlog-log-slower-than 10000" },
+        { "field": "notify-keyspace-events", "syntax": "notify-keyspace-events <flags>", "default": "—", "required": false, "scope": "observability", "desc": "键空间通知", "example": "notify-keyspace-events Ex" }
+      ]
+    }
+  ]
+}

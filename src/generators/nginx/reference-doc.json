@@ -1,0 +1,100 @@
+{
+  "$schema": "config-reference/v1",
+  "tool": "nginx",
+  "description": "nginx.conf 配置项参考, 供可视化生成器消费",
+  "groups": [
+    {
+      "name": "main 全局(块外)",
+      "items": [
+        { "field": "user", "syntax": "user <user> [group];", "default": "nobody", "required": false, "scope": "main", "desc": "worker 进程运行用户", "example": "user nginx;" },
+        { "field": "worker_processes", "syntax": "worker_processes <num|auto>;", "default": "auto", "required": false, "scope": "main", "desc": "worker 进程数", "example": "worker_processes auto;" },
+        { "field": "worker_rlimit_nofile", "syntax": "worker_rlimit_nofile <num>;", "default": "系统 ulimit", "required": false, "scope": "main", "desc": "最大文件描述符", "example": "worker_rlimit_nofile 65535;" },
+        { "field": "error_log", "syntax": "error_log <file> [<level>];", "default": "logs/error.log error", "required": false, "scope": "main", "desc": "错误日志路径与级别", "example": "error_log /var/log/nginx/error.log warn;" },
+        { "field": "pid", "syntax": "pid <file>;", "default": "logs/nginx.pid", "required": false, "scope": "main", "desc": "PID 文件", "example": "pid /run/nginx.pid;" },
+        { "field": "daemon", "syntax": "daemon on|off;", "default": "on", "required": false, "scope": "main", "desc": "守护进程, 容器内设 off", "example": "daemon off;" }
+      ]
+    },
+    {
+      "name": "events",
+      "items": [
+        { "field": "worker_connections", "syntax": "worker_connections <num>;", "default": "512(发行版常 1024)", "required": false, "scope": "events", "desc": "单 worker 最大连接数", "example": "worker_connections 10240;" },
+        { "field": "multi_accept", "syntax": "multi_accept on|off;", "default": "off", "required": false, "scope": "events", "desc": "一次接受所有新连接", "example": "multi_accept on;" },
+        { "field": "use", "syntax": "use <method>;", "default": "自动(Linux: epoll)", "required": false, "scope": "events", "desc": "事件模型", "example": "use epoll;" }
+      ]
+    },
+    {
+      "name": "http",
+      "items": [
+        { "field": "sendfile", "syntax": "sendfile on|off;", "default": "off(发行版常 on)", "required": false, "scope": "http", "desc": "内核零拷贝传文件", "example": "sendfile on;" },
+        { "field": "tcp_nopush", "syntax": "tcp_nopush on|off;", "default": "off", "required": false, "scope": "http", "desc": "配合 sendfile 整包发送", "example": "tcp_nopush on;" },
+        { "field": "tcp_nodelay", "syntax": "tcp_nodelay on|off;", "default": "on", "required": false, "scope": "http", "desc": "禁用 Nagle 算法", "example": "tcp_nodelay on;" },
+        { "field": "keepalive_timeout", "syntax": "keepalive_timeout <time>;", "default": "75s", "required": false, "scope": "http", "desc": "长连接超时", "example": "keepalive_timeout 65s;" },
+        { "field": "keepalive_requests", "syntax": "keepalive_requests <num>;", "default": "1000", "required": false, "scope": "http", "desc": "单连接最大请求数", "example": "keepalive_requests 1000;" },
+        { "field": "default_type", "syntax": "default_type <mime>;", "default": "text/plain", "required": false, "scope": "http", "desc": "默认 MIME 类型", "example": "default_type application/octet-stream;" },
+        { "field": "client_max_body_size", "syntax": "client_max_body_size <size>;", "default": "1m", "required": false, "scope": "http", "desc": "请求体上限", "example": "client_max_body_size 10m;" },
+        { "field": "server_tokens", "syntax": "server_tokens on|off;", "default": "on", "required": false, "scope": "http", "desc": "响应头隐藏版本(生产建议 off)", "example": "server_tokens off;" },
+        { "field": "include", "syntax": "include <file>;", "default": "—", "required": false, "scope": "http", "desc": "引入文件", "example": "include /etc/nginx/mime.types;" },
+        { "field": "gzip", "syntax": "gzip on|off;", "default": "off", "required": false, "scope": "http", "desc": "开启 gzip 压缩", "example": "gzip on;" },
+        { "field": "gzip_types", "syntax": "gzip_types <type> ...;", "default": "仅 text/html", "required": false, "scope": "http", "desc": "压缩的 MIME 类型", "example": "gzip_types text/css application/javascript application/json image/svg+xml;" },
+        { "field": "gzip_min_length", "syntax": "gzip_min_length <size>;", "default": "20", "required": false, "scope": "http", "desc": "最小压缩长度", "example": "gzip_min_length 1024;" }
+      ]
+    },
+    {
+      "name": "server",
+      "items": [
+        { "field": "listen", "syntax": "listen <addr>:<port> [ssl] [http2];", "default": "—", "required": true, "scope": "server", "desc": "监听地址端口", "example": "listen 443 ssl;\nhttp2 on;" },
+        { "field": "server_name", "syntax": "server_name <domain> ...;", "default": "空(匹配所有)", "required": false, "scope": "server", "desc": "虚拟主机域名", "example": "server_name example.com www.example.com;" },
+        { "field": "root", "syntax": "root <path>;", "default": "—", "required": false, "scope": "server", "desc": "文档根目录", "example": "root /usr/share/nginx/html;" },
+        { "field": "index", "syntax": "index <file> ...;", "default": "index.html", "required": false, "scope": "server", "desc": "默认首页", "example": "index index.html index.htm;" },
+        { "field": "error_page", "syntax": "error_page <code> <uri>;", "default": "—", "required": false, "scope": "server", "desc": "错误页", "example": "error_page 404 /404.html;" },
+        { "field": "return", "syntax": "return <code> [<url>];", "default": "—", "required": false, "scope": "server", "desc": "直接返回/重定向", "example": "return 301 https://$host$request_uri;" },
+        { "field": "rewrite", "syntax": "rewrite <regex> <replacement> [last|break|redirect|permanent];", "default": "—", "required": false, "scope": "server", "desc": "URL 重写", "example": "rewrite ^/old/(.*) /new/$1 permanent;" },
+        { "field": "access_log", "syntax": "access_log <file> [<format>];", "default": "logs/access.log", "required": false, "scope": "server", "desc": "访问日志", "example": "access_log /var/log/nginx/access.log;" },
+        { "field": "ssl_certificate", "syntax": "ssl_certificate <file>;", "default": "—", "required": false, "scope": "server", "desc": "TLS 证书", "example": "ssl_certificate /etc/nginx/cert.pem;" },
+        { "field": "ssl_certificate_key", "syntax": "ssl_certificate_key <file>;", "default": "—", "required": false, "scope": "server", "desc": "TLS 私钥", "example": "ssl_certificate_key /etc/nginx/key.pem;" },
+        { "field": "ssl_protocols", "syntax": "ssl_protocols <ver> ...;", "default": "TLSv1.2 TLSv1.3(现代)", "required": false, "scope": "server", "desc": "允许的 TLS 版本", "example": "ssl_protocols TLSv1.2 TLSv1.3;" },
+        { "field": "ssl_ciphers", "syntax": "ssl_ciphers <ciphers>;", "default": "—", "required": false, "scope": "server", "desc": "加密套件", "example": "ssl_ciphers HIGH:!aNULL:!MD5;" }
+      ]
+    },
+    {
+      "name": "location 匹配修饰符",
+      "items": [
+        { "field": "=", "syntax": "location = <uri> { }", "default": "—", "required": false, "scope": "location", "desc": "精确匹配(最高优先级)", "example": "location = /favicon.ico { }" },
+        { "field": "^~", "syntax": "location ^~ <uri> { }", "default": "—", "required": false, "scope": "location", "desc": "前缀匹配, 命中后不再查正则", "example": "location ^~ /static/ { }" },
+        { "field": "~", "syntax": "location ~ <regex> { }", "default": "—", "required": false, "scope": "location", "desc": "区分大小写正则", "example": "location ~ \\.(php)$ { }" },
+        { "field": "~*", "syntax": "location ~* <regex> { }", "default": "—", "required": false, "scope": "location", "desc": "不区分大小写正则", "example": "location ~* \\.(js|css)$ { }" },
+        { "field": "(无修饰符)", "syntax": "location <uri> { }", "default": "—", "required": false, "scope": "location", "desc": "普通前缀匹配", "example": "location /api/ { }" }
+      ]
+    },
+    {
+      "name": "location 指令",
+      "items": [
+        { "field": "proxy_pass", "syntax": "proxy_pass <url>;", "default": "—", "required": false, "scope": "location", "desc": "反向代理到后端", "example": "proxy_pass http://app:8080;" },
+        { "field": "proxy_set_header", "syntax": "proxy_set_header <name> <value>;", "default": "—", "required": false, "scope": "location", "desc": "转发请求头", "example": "proxy_set_header Host $host;\nproxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;" },
+        { "field": "proxy_http_version", "syntax": "proxy_http_version 1.0|1.1;", "default": "1.0", "required": false, "scope": "location", "desc": "代理 HTTP 版本, WebSocket/SSE 常用 1.1", "example": "proxy_http_version 1.1;" },
+        { "field": "proxy_connect_timeout", "syntax": "proxy_connect_timeout <time>;", "default": "60s", "required": false, "scope": "location", "desc": "连后端超时", "example": "proxy_connect_timeout 5s;" },
+        { "field": "proxy_read_timeout", "syntax": "proxy_read_timeout <time>;", "default": "60s", "required": false, "scope": "location", "desc": "读后端超时", "example": "proxy_read_timeout 60s;" },
+        { "field": "proxy_send_timeout", "syntax": "proxy_send_timeout <time>;", "default": "60s", "required": false, "scope": "location", "desc": "发送到后端超时, WebSocket/SSE 长连接可调大", "example": "proxy_send_timeout 86400s;" },
+        { "field": "proxy_buffering", "syntax": "proxy_buffering on|off;", "default": "on", "required": false, "scope": "location", "desc": "代理缓冲, SSE/流式响应常用 off", "example": "proxy_buffering off;" },
+        { "field": "chunked_transfer_encoding", "syntax": "chunked_transfer_encoding on|off;", "default": "on", "required": false, "scope": "location", "desc": "分块传输, SSE/流式响应可显式开启", "example": "chunked_transfer_encoding on;" },
+        { "field": "try_files", "syntax": "try_files <file> ... <fallback>;", "default": "—", "required": false, "scope": "location", "desc": "依次查找, SPA 用 /index.html 回退", "example": "try_files $uri $uri/ /index.html;" },
+        { "field": "alias", "syntax": "alias <path>;", "default": "—", "required": false, "scope": "location", "desc": "路径别名(替换 location), 区别于 root(拼接)", "example": "alias /var/www/files/;" },
+        { "field": "add_header", "syntax": "add_header <name> <value> [always];", "default": "—", "required": false, "scope": "location", "desc": "追加响应头", "example": "add_header X-Frame-Options SAMEORIGIN always;" },
+        { "field": "expires", "syntax": "expires <time|epoch|max|off>;", "default": "off", "required": false, "scope": "location", "desc": "缓存过期", "example": "expires 30d;" },
+        { "field": "autoindex", "syntax": "autoindex on|off;", "default": "off", "required": false, "scope": "location", "desc": "目录列表", "example": "autoindex on;" },
+        { "field": "limit_req", "syntax": "limit_req zone=<name> burst=<n> [nodelay];", "default": "—", "required": false, "scope": "location", "desc": "请求限流(需先 limit_req_zone)", "example": "limit_req zone=api burst=20 nodelay;" }
+      ]
+    },
+    {
+      "name": "upstream(负载均衡)",
+      "items": [
+        { "field": "server", "syntax": "server <addr> [weight=N] [max_fails=N] [fail_timeout=T];", "default": "weight=1 max_fails=1 fail_timeout=10s", "required": true, "scope": "upstream", "desc": "后端节点", "example": "server app1:3000 weight=3;\nserver app2:3000;" },
+        { "field": "least_conn", "syntax": "least_conn;", "default": "默认轮询", "required": false, "scope": "upstream", "desc": "最少连接策略", "example": "least_conn;" },
+        { "field": "ip_hash", "syntax": "ip_hash;", "default": "默认轮询", "required": false, "scope": "upstream", "desc": "源 IP 哈希(会话保持)", "example": "ip_hash;" },
+        { "field": "random", "syntax": "random [two [method]];", "default": "默认轮询", "required": false, "scope": "upstream", "desc": "随机策略", "example": "random;" },
+        { "field": "keepalive", "syntax": "keepalive <num>;", "default": "—", "required": false, "scope": "upstream", "desc": "到后端的长连接缓存数", "example": "keepalive 32;" },
+        { "field": "health_check", "syntax": "health_check [uri=/<path>] [interval=<t>];", "default": "—", "required": false, "scope": "upstream", "desc": "主动健康检查(开源版不支持, 需 Plus/第三方)", "example": "health_check interval=10s;" }
+      ]
+    }
+  ]
+}

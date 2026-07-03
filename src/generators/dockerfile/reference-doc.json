@@ -1,0 +1,55 @@
+{
+  "$schema": "config-reference/v1",
+  "tool": "dockerfile",
+  "description": "Dockerfile 指令配置项参考, 供可视化生成器消费",
+  "groups": [
+    {
+      "name": "基础与元数据",
+      "items": [
+        { "field": "FROM", "syntax": "FROM [--platform=<platform>] <image>[:<tag>] [AS <name>]", "default": "—", "required": true, "scope": "构建", "desc": "基础镜像, 必须为首个非注释指令", "example": "FROM node:20-alpine AS builder" },
+        { "field": "ARG", "syntax": "ARG <name>[=<default>]", "default": "无(必填名称)", "required": false, "scope": "构建", "desc": "构建期参数, 仅构建期可见, FROM 前可用, 可用 --build-arg 覆盖", "example": "ARG NODE_ENV=production" },
+        { "field": "LABEL", "syntax": "LABEL <key>=<value> ...", "default": "—", "required": false, "scope": "构建", "desc": "镜像元数据, 替代废弃的 MAINTAINER", "example": "LABEL version=\"1.0\" maintainer=\"dev\"" },
+        { "field": "MAINTAINER", "syntax": "MAINTAINER <name>", "default": "—", "required": false, "scope": "构建", "desc": "已废弃, 改用 LABEL maintainer=", "example": "LABEL maintainer=\"dev\"" }
+      ]
+    },
+    {
+      "name": "环境与路径",
+      "items": [
+        { "field": "ENV", "syntax": "ENV <KEY>=<value> ...", "default": "—", "required": false, "scope": "构建+运行", "desc": "环境变量, 写入镜像, 容器运行时仍生效", "example": "ENV NODE_ENV=production PORT=3000" },
+        { "field": "WORKDIR", "syntax": "WORKDIR <绝对路径>", "default": "/", "required": false, "scope": "构建+运行", "desc": "工作目录, 不存在自动创建, 后续指令相对它", "example": "WORKDIR /app" },
+        { "field": "USER", "syntax": "USER <user>[:<group>]", "default": "root 或镜像默认", "required": false, "scope": "运行", "desc": "切换运行用户", "example": "USER 1001:1001" }
+      ]
+    },
+    {
+      "name": "文件操作",
+      "items": [
+        { "field": "COPY", "syntax": "COPY [--chown=u:g] [--from=<stage>] <src> <dest>", "default": "—", "required": false, "scope": "构建", "desc": "复制文件/目录进镜像, 推荐优先于 ADD", "example": "COPY --chown=node:node --from=builder /app/dist ./dist" },
+        { "field": "ADD", "syntax": "ADD [--chown=u:g] <src> <dest>", "default": "—", "required": false, "scope": "构建", "desc": "复制, 额外支持 URL 和 tar 自动解压, 普通文件用 COPY", "example": "ADD rootfs.tar.gz /" }
+      ]
+    },
+    {
+      "name": "构建执行",
+      "items": [
+        { "field": "RUN", "syntax": "RUN <command>  |  RUN [\"cmd\", \"arg\"]", "default": "—", "required": false, "scope": "构建", "desc": "构建期执行命令, shell/exec 形式, 合并以减少镜像层数", "example": "RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*" }
+      ]
+    },
+    {
+      "name": "运行时命令",
+      "items": [
+        { "field": "ENTRYPOINT", "syntax": "ENTRYPOINT [\"cmd\", \"arg\"]", "default": "—", "required": false, "scope": "运行", "desc": "固定入口命令, 不易被 docker run 覆盖", "example": "ENTRYPOINT [\"node\"]" },
+        { "field": "CMD", "syntax": "CMD [\"cmd\", \"arg\"]  |  CMD command arg", "default": "镜像默认", "required": false, "scope": "运行", "desc": "默认命令/参数, 可被 docker run 覆盖, 常与 ENTRYPOINT 配合提供参数", "example": "CMD [\"server.js\"]" },
+        { "field": "EXPOSE", "syntax": "EXPOSE <port>[/<proto>]", "default": "—", "required": false, "scope": "运行", "desc": "声明端口(仅文档性质, 不真正发布), 需 -p 才映射到宿主", "example": "EXPOSE 3000/tcp" },
+        { "field": "VOLUME", "syntax": "VOLUME [\"/path\"]  |  VOLUME /path", "default": "—", "required": false, "scope": "运行", "desc": "声明匿名卷挂载点", "example": "VOLUME [\"/app/data\"]" }
+      ]
+    },
+    {
+      "name": "运维与信号",
+      "items": [
+        { "field": "HEALTHCHECK", "syntax": "HEALTHCHECK [--interval=30s] [--timeout=3s] [--start-period=5s] [--retries=3] CMD <cmd>", "default": "interval=30s timeout=30s start-period=0s retries=3; 默认无检查", "required": false, "scope": "运行", "desc": "容器健康检查, HEALTHCHECK NONE 禁用", "example": "HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost:3000/health || exit 1" },
+        { "field": "STOPSIGNAL", "syntax": "STOPSIGNAL <signal>", "default": "SIGTERM", "required": false, "scope": "运行", "desc": "停止容器时发送的信号", "example": "STOPSIGNAL SIGQUIT" },
+        { "field": "SHELL", "syntax": "SHELL [\"executable\", \"param\"]", "default": "[\"/bin/sh\", \"-c\"]", "required": false, "scope": "构建+运行", "desc": "默认 shell, 多用于 Windows 镜像", "example": "SHELL [\"cmd\", \"/S\", \"/C\"]" },
+        { "field": "ONBUILD", "syntax": "ONBUILD <INSTRUCTION>", "default": "—", "required": false, "scope": "触发", "desc": "被作为基础镜像时触发执行, 已不推荐", "example": "ONBUILD ADD . /app" }
+      ]
+    }
+  ]
+}

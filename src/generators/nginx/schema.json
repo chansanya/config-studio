@@ -1,0 +1,417 @@
+{
+  "$schema": "config-generator/v1",
+  "id": "nginx",
+  "global": {
+    "state": {
+      "workerConnections": 1024,
+      "sendfile": true,
+      "keepaliveTimeout": "65s",
+      "clientMaxBodySize": "10m",
+      "serverTokens": false,
+      "enableLimitReq": false,
+      "limitReqZone": "api",
+      "limitReqRate": "10r/s"
+    },
+    "fieldGroups": [
+      {
+        "title": "全局与生产参数",
+        "icon": "Settings2",
+        "fields": [
+          { "key": "workerConnections", "label": "events.worker_connections", "hint": "单个 worker 最大连接数", "type": "number", "min": 1 },
+          { "key": "sendfile", "label": "sendfile", "hint": "启用零拷贝发送静态文件", "type": "toggle" },
+          { "key": "keepaliveTimeout", "label": "keepalive_timeout", "hint": "HTTP 长连接超时，如 65s", "type": "text" },
+          { "key": "clientMaxBodySize", "label": "client_max_body_size", "hint": "请求体大小上限，如 10m", "type": "text" },
+          { "key": "serverTokens", "label": "server_tokens", "hint": "生产建议关闭", "type": "toggle" },
+          { "key": "enableLimitReq", "label": "启用 limit_req_zone", "hint": "生成全局限流 zone", "type": "toggle" },
+          { "key": "limitReqZone", "label": "limit_req_zone name", "hint": "限流 zone 名称", "type": "text", "when": "enableLimitReq" },
+          { "key": "limitReqRate", "label": "limit_req_zone rate", "hint": "如 10r/s", "type": "text", "when": "enableLimitReq" }
+        ]
+      }
+    ]
+  },
+  "server": {
+    "defaults": {
+      "listenPort": 80,
+      "enableHttps": false,
+      "sslCertificate": "/etc/nginx/certs/fullchain.pem",
+      "sslCertificateKey": "/etc/nginx/certs/privkey.pem",
+      "sslProtocols": "TLSv1.2 TLSv1.3",
+      "sslCiphers": "HIGH:!aNULL:!MD5",
+      "enableHttpRedirect": false,
+      "root": "/usr/share/nginx/html",
+      "index": "index.html",
+      "enableGzip": true,
+      "accessLog": "/var/log/nginx/access.log",
+      "errorLog": "/var/log/nginx/error.log",
+      "securityHeaders": "X-Frame-Options=SAMEORIGIN,X-Content-Type-Options=nosniff,Referrer-Policy=no-referrer-when-downgrade"
+    },
+    "first": {
+      "serverName": "example.com"
+    },
+    "next": {
+      "serverName": "app-{serial}.example.com"
+    },
+    "fields": [
+      {
+        "key": "serverName",
+        "label": "server_name",
+        "hint": "域名，多个域名用空格分隔",
+        "type": "text"
+      },
+      {
+        "key": "listenPort",
+        "label": "listen",
+        "hint": "HTTP 监听端口",
+        "type": "number",
+        "min": 1,
+        "max": 65535
+      },
+      {
+        "key": "enableHttps",
+        "label": "启用 HTTPS",
+        "hint": "生成 ssl_certificate 配置",
+        "type": "toggle"
+      },
+      {
+        "key": "sslCertificate",
+        "label": "ssl_certificate",
+        "hint": "证书路径",
+        "type": "text",
+        "when": "enableHttps"
+      },
+      {
+        "key": "sslCertificateKey",
+        "label": "ssl_certificate_key",
+        "hint": "私钥路径",
+        "type": "text",
+        "when": "enableHttps"
+      },
+      {
+        "key": "sslProtocols",
+        "label": "ssl_protocols",
+        "hint": "允许的 TLS 版本",
+        "type": "text",
+        "when": "enableHttps"
+      },
+      {
+        "key": "sslCiphers",
+        "label": "ssl_ciphers",
+        "hint": "TLS 加密套件",
+        "type": "text",
+        "when": "enableHttps"
+      },
+      {
+        "key": "enableHttpRedirect",
+        "label": "HTTP 跳 HTTPS",
+        "hint": "额外生成 80 端口重定向 server",
+        "type": "toggle"
+      },
+      {
+        "key": "root",
+        "label": "root",
+        "hint": "默认静态文件根目录",
+        "type": "text"
+      },
+      {
+        "key": "index",
+        "label": "index",
+        "hint": "默认首页文件",
+        "type": "text"
+      },
+      {
+        "key": "enableGzip",
+        "label": "gzip",
+        "hint": "启用 gzip 压缩",
+        "type": "toggle"
+      },
+      {
+        "key": "securityHeaders",
+        "label": "安全响应头",
+        "hint": "键值对，逗号分隔",
+        "type": "textarea"
+      },
+      {
+        "key": "accessLog",
+        "label": "access_log",
+        "hint": "访问日志路径",
+        "type": "text"
+      },
+      {
+        "key": "errorLog",
+        "label": "error_log",
+        "hint": "错误日志路径",
+        "type": "text"
+      }
+    ]
+  },
+  "location": {
+    "defaults": {
+      "path": "/",
+      "type": "static",
+      "proxyPass": "http://app_backend",
+      "aliasRoot": "",
+      "tryFiles": "$uri $uri/ /index.html",
+      "enableWebSocket": false,
+      "enableSse": false,
+      "proxyHttpVersion": "1.1",
+      "proxyConnectTimeout": "5s",
+      "proxyReadTimeout": "60s",
+      "proxySendTimeout": "60s",
+      "disableProxyBuffering": false,
+      "enableChunkedTransferEncoding": false,
+      "enableLimitReq": false,
+      "limitReqBurst": 20,
+      "expires": "",
+      "redirectTarget": "https://example.com$request_uri",
+      "extraHeaders": ""
+    },
+    "fields": [
+      {
+        "key": "serverName",
+        "label": "归属 server_name",
+        "hint": "填写对应 server 的 server_name 第一个域名",
+        "type": "text"
+      },
+      {
+        "key": "path",
+        "label": "location",
+        "hint": "路径前缀，如 / 或 /api/",
+        "type": "text"
+      },
+      {
+        "key": "type",
+        "label": "类型",
+        "hint": "静态站点、反向代理或重定向",
+        "type": "select",
+        "options": [
+          { "value": "static", "label": "static" },
+          { "value": "proxy", "label": "proxy" },
+          { "value": "redirect", "label": "redirect" }
+        ]
+      },
+      {
+        "key": "aliasRoot",
+        "label": "alias/root",
+        "hint": "该 location 独立静态目录，留空使用 server root",
+        "type": "text",
+        "when": { "key": "type", "value": "static" }
+      },
+      {
+        "key": "tryFiles",
+        "label": "try_files",
+        "hint": "SPA 常用: $uri $uri/ /index.html",
+        "type": "text",
+        "when": { "key": "type", "value": "static" }
+      },
+      {
+        "key": "proxyPass",
+        "label": "proxy_pass",
+        "hint": "上游地址，如 http://app:3000",
+        "type": "text",
+        "when": { "key": "type", "value": "proxy" }
+      },
+      {
+        "key": "enableWebSocket",
+        "label": "WebSocket",
+        "hint": "生成 Upgrade / Connection 头",
+        "type": "toggle",
+        "when": { "key": "type", "value": "proxy" }
+      },
+      {
+        "key": "enableSse",
+        "label": "SSE / 流式响应",
+        "hint": "生成禁用缓冲和 chunked 传输参考",
+        "type": "toggle",
+        "when": { "key": "type", "value": "proxy" }
+      },
+      {
+        "key": "proxyHttpVersion",
+        "label": "proxy_http_version",
+        "hint": "WebSocket/SSE 推荐 1.1",
+        "type": "select",
+        "options": [
+          { "value": "1.0", "label": "1.0" },
+          { "value": "1.1", "label": "1.1" }
+        ],
+        "when": { "key": "type", "value": "proxy" }
+      },
+      {
+        "key": "proxyConnectTimeout",
+        "label": "proxy_connect_timeout",
+        "hint": "连接上游超时，如 5s",
+        "type": "text",
+        "when": { "key": "type", "value": "proxy" }
+      },
+      {
+        "key": "proxyReadTimeout",
+        "label": "proxy_read_timeout",
+        "hint": "读取上游响应超时，如 60s",
+        "type": "text",
+        "when": { "key": "type", "value": "proxy" }
+      },
+      {
+        "key": "proxySendTimeout",
+        "label": "proxy_send_timeout",
+        "hint": "发送到上游超时，长连接可设 86400s",
+        "type": "text",
+        "when": { "key": "type", "value": "proxy" }
+      },
+      {
+        "key": "disableProxyBuffering",
+        "label": "proxy_buffering off",
+        "hint": "SSE/流式响应通常需要关闭缓冲",
+        "type": "toggle",
+        "when": { "key": "type", "value": "proxy" }
+      },
+      {
+        "key": "enableChunkedTransferEncoding",
+        "label": "chunked_transfer_encoding on",
+        "hint": "SSE/流式响应可开启分块传输",
+        "type": "toggle",
+        "when": { "key": "type", "value": "proxy" }
+      },
+      {
+        "key": "enableLimitReq",
+        "label": "启用 limit_req",
+        "hint": "需先启用全局 limit_req_zone",
+        "type": "toggle"
+      },
+      {
+        "key": "limitReqBurst",
+        "label": "limit_req burst",
+        "hint": "突发请求数",
+        "type": "number",
+        "min": 1,
+        "when": "enableLimitReq"
+      },
+      {
+        "key": "expires",
+        "label": "expires",
+        "hint": "静态缓存时间，如 30d",
+        "type": "text",
+        "when": { "key": "type", "value": "static" }
+      },
+      {
+        "key": "redirectTarget",
+        "label": "return 301",
+        "hint": "重定向目标",
+        "type": "text",
+        "when": { "key": "type", "value": "redirect" }
+      },
+      {
+        "key": "extraHeaders",
+        "label": "额外响应头",
+        "hint": "键值对，逗号分隔",
+        "type": "textarea"
+      }
+    ],
+    "typeOptions": [
+      { "value": "static", "label": "static" },
+      { "value": "proxy", "label": "proxy" },
+      { "value": "redirect", "label": "redirect" }
+    ]
+  },
+  "upstream": {
+    "defaults": {
+      "servers": "app:3000,app2:3000",
+      "strategy": "round_robin",
+      "enableKeepalive": true,
+      "keepalive": 32
+    },
+    "first": {
+      "name": "app_backend"
+    },
+    "next": {
+      "name": "backend_{serial}"
+    },
+    "fields": [
+      {
+        "key": "name",
+        "label": "upstream 名称",
+        "hint": "location proxy_pass 可填写 http://该名称",
+        "type": "text"
+      },
+      {
+        "key": "servers",
+        "label": "server 列表",
+        "hint": "逗号分隔，如 app1:3000 weight=2,app2:3000",
+        "type": "textarea"
+      },
+      {
+        "key": "strategy",
+        "label": "负载策略",
+        "hint": "默认 round_robin 不输出额外指令",
+        "type": "select",
+        "options": [
+          { "value": "round_robin", "label": "round_robin" },
+          { "value": "least_conn", "label": "least_conn" },
+          { "value": "ip_hash", "label": "ip_hash" },
+          { "value": "random", "label": "random" }
+        ]
+      },
+      {
+        "key": "enableKeepalive",
+        "label": "启用 keepalive",
+        "hint": "保留到后端的空闲连接",
+        "type": "toggle"
+      },
+      {
+        "key": "keepalive",
+        "label": "keepalive",
+        "hint": "每个 worker 保留的后端连接数",
+        "type": "number",
+        "min": 1,
+        "when": "enableKeepalive"
+      }
+    ]
+  },
+  "blocks": {
+    "upstream": {
+      "title": "Upstream",
+      "icon": "Network",
+      "addLabel": "新增 Upstream",
+      "add": {
+        "key": "value",
+        "label": "类型",
+        "hint": "新增一个 upstream 负载均衡组"
+      },
+      "emptyTitle": "还没有 upstream",
+      "emptyText": "新增 upstream 后可在 location proxy_pass 中引用。",
+      "groupTitle": "Upstream 参数",
+      "groupIcon": "Network"
+    },
+    "server": {
+      "title": "Server",
+      "icon": "Server",
+      "addLabel": "新增 Server",
+      "add": {
+        "key": "value",
+        "label": "类型",
+        "hint": "新增一个 server 块"
+      },
+      "emptyTitle": "还没有 server",
+      "emptyText": "新增 server 后开始配置域名和监听端口。",
+      "groupTitle": "Server 参数",
+      "groupIcon": "Settings2"
+    },
+    "location": {
+      "title": "Location",
+      "icon": "Route",
+      "addLabel": "新增 Location",
+      "add": {
+        "key": "value",
+        "label": "Location 类型",
+        "hint": "新增静态、反代或重定向 location",
+        "options": [
+          { "value": "static", "label": "static" },
+          { "value": "proxy", "label": "proxy" },
+          { "value": "redirect", "label": "redirect" }
+        ]
+      },
+      "emptyTitle": "还没有 location",
+      "emptyText": "新增 location 后配置路径和处理方式。",
+      "groupTitle": "Location 参数",
+      "groupIcon": "Route"
+    }
+  }
+}

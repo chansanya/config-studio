@@ -1,0 +1,76 @@
+{
+  "$schema": "config-reference/v1",
+  "tool": "docker-compose",
+  "description": "docker-compose.yml 配置项参考, 供可视化生成器消费",
+  "groups": [
+    {
+      "name": "顶层键",
+      "items": [
+        { "field": "name", "syntax": "name: <string>", "default": "目录名", "required": false, "scope": "顶层", "desc": "项目名, 决定容器/网络前缀", "example": "name: myapp" },
+        { "field": "services", "syntax": "services: { <服务名>: {...} }", "default": "—", "required": true, "scope": "顶层", "desc": "服务定义, 必填", "example": "services:\n  web:\n    image: nginx" },
+        { "field": "networks", "syntax": "networks: { <名>: {...} }", "default": "默认 bridge", "required": false, "scope": "顶层", "desc": "自定义网络", "example": "networks:\n  internal:\n    driver: bridge" },
+        { "field": "volumes", "syntax": "volumes: { <名>: {...} }", "default": "—", "required": false, "scope": "顶层", "desc": "命名卷定义", "example": "volumes:\n  data: {}" },
+        { "field": "configs / secrets", "syntax": "configs: {...}  secrets: {...}", "default": "—", "required": false, "scope": "顶层", "desc": "配置文件/敏感数据", "example": "secrets:\n  db_pwd:\n    file: ./secret.txt" },
+        { "field": "version", "syntax": "version: '<ver>'", "default": "—", "required": false, "scope": "顶层", "desc": "已弃用, Compose Spec 不再需要", "example": "# version: '3.9'  # 不推荐" }
+      ]
+    },
+    {
+      "name": "镜像与构建",
+      "items": [
+        { "field": "image", "syntax": "image: <repo>[:<tag>]", "default": "latest", "required": false, "scope": "service", "desc": "使用现成镜像", "example": "image: nginx:1.27" },
+        { "field": "build", "syntax": "build: { context, dockerfile, args, target, cache_from, labels }", "default": "—", "required": false, "scope": "service", "desc": "构建配置", "example": "build:\n  context: ./app\n  dockerfile: Dockerfile\n  args:\n    NODE_ENV: production\n  target: runtime" },
+        { "field": "container_name", "syntax": "container_name: <name>", "default": "<项目>-<服务>-1", "required": false, "scope": "service", "desc": "固定容器名", "example": "container_name: web" },
+        { "field": "command", "syntax": "command: <cmd> | [<cmd>, <arg>]", "default": "镜像 CMD", "required": false, "scope": "service", "desc": "覆盖默认命令", "example": "command: [\"app\", \"--debug\"]" },
+        { "field": "entrypoint", "syntax": "entrypoint: <cmd> | [<cmd>]", "default": "镜像 ENTRYPOINT", "required": false, "scope": "service", "desc": "覆盖入口", "example": "entrypoint: [\"/entrypoint.sh\"]" }
+      ]
+    },
+    {
+      "name": "环境与配置",
+      "items": [
+        { "field": "environment", "syntax": "environment: { KEY: value } | [KEY=value]", "default": "—", "required": false, "scope": "service", "desc": "环境变量", "example": "environment:\n  TZ: Asia/Shanghai\n  DEBUG: \"1\"" },
+        { "field": "env_file", "syntax": "env_file: <file> | [<file>]", "default": "—", "required": false, "scope": "service", "desc": "从文件加载环境变量", "example": "env_file: .env" }
+      ]
+    },
+    {
+      "name": "网络与端口",
+      "items": [
+        { "field": "ports", "syntax": "ports: [\"<host>:<container>\"] | [{target, published, protocol, mode}]", "default": "—", "required": false, "scope": "service", "desc": "发布端口到宿主", "example": "ports:\n  - \"8080:80\"\n  - { target: 443, published: 8443, protocol: tcp }" },
+        { "field": "expose", "syntax": "expose: [<port>]", "default": "—", "required": false, "scope": "service", "desc": "仅对链接服务暴露, 不发布到宿主", "example": "expose: [\"80\"]" },
+        { "field": "networks", "syntax": "networks: [<名>]", "default": "默认网络", "required": false, "scope": "service", "desc": "加入的网络", "example": "networks: [internal]" }
+      ]
+    },
+    {
+      "name": "存储与依赖",
+      "items": [
+        { "field": "volumes", "syntax": "volumes: [\"<host>:<container>[:mode]\"] | [<命名卷>:<container>]", "default": "—", "required": false, "scope": "service", "desc": "挂载(绑定或命名卷)", "example": "volumes:\n  - ./html:/usr/share/nginx/html\n  - data:/data" },
+        { "field": "depends_on", "syntax": "depends_on: { <服务>: { condition: service_healthy } }", "default": "—", "required": false, "scope": "service", "desc": "启动依赖", "example": "depends_on:\n  db:\n    condition: service_healthy" }
+      ]
+    },
+    {
+      "name": "生命周期",
+      "items": [
+        { "field": "restart", "syntax": "restart: no | always | on-failure | unless-stopped", "default": "no", "required": false, "scope": "service", "desc": "重启策略", "example": "restart: unless-stopped" },
+        { "field": "healthcheck", "syntax": "healthcheck: { test, interval, timeout, retries, start_period }", "default": "继承镜像", "required": false, "scope": "service", "desc": "健康检查", "example": "healthcheck:\n  test: [\"CMD\", \"wget\", \"-qO-\", \"http://localhost/\"]\n  interval: 30s\n  timeout: 3s\n  retries: 3\n  start_period: 5s" },
+        { "field": "init", "syntax": "init: true | false", "default": "false", "required": false, "scope": "service", "desc": "启用 tini 作 PID 1, 正确传递信号", "example": "init: true" },
+        { "field": "stop_signal", "syntax": "stop_signal: <signal>", "default": "SIGTERM", "required": false, "scope": "service", "desc": "停止信号", "example": "stop_signal: SIGINT" },
+        { "field": "stop_grace_period", "syntax": "stop_grace_period: <duration>", "default": "10s", "required": false, "scope": "service", "desc": "强杀前的宽限时间", "example": "stop_grace_period: 30s" }
+      ]
+    },
+    {
+      "name": "资源/权限/编排",
+      "items": [
+        { "field": "user", "syntax": "user: <uid>[:<gid>]", "default": "镜像默认", "required": false, "scope": "service", "desc": "运行用户", "example": "user: \"1001:1001\"" },
+        { "field": "working_dir", "syntax": "working_dir: <path>", "default": "镜像 WORKDIR", "required": false, "scope": "service", "desc": "工作目录", "example": "working_dir: /app" },
+        { "field": "hostname", "syntax": "hostname: <name>", "default": "容器ID前缀", "required": false, "scope": "service", "desc": "容器主机名", "example": "hostname: web-1" },
+        { "field": "labels", "syntax": "labels: { key: value }", "default": "—", "required": false, "scope": "service", "desc": "服务标签", "example": "labels:\n  app: myapp" },
+        { "field": "profiles", "syntax": "profiles: [<name>]", "default": "—", "required": false, "scope": "service", "desc": "激活指定 profile 才启动", "example": "profiles: [debug]" },
+        { "field": "logging", "syntax": "logging: { driver, options }", "default": "driver: json-file", "required": false, "scope": "service", "desc": "日志驱动与轮转", "example": "logging:\n  driver: json-file\n  options:\n    max-size: \"10m\"\n    max-file: \"3\"" },
+        { "field": "deploy", "syntax": "deploy: { replicas, resources, placement, update_config, restart_policy }", "default": "—", "required": false, "scope": "service", "desc": "Swarm/K8s 部署配置(普通 compose 用 restart)", "example": "deploy:\n  replicas: 3\n  resources:\n    limits: { cpus: \"0.5\", memory: 512M }" },
+        { "field": "cap_add / cap_drop", "syntax": "cap_add: [<cap>]", "default": "—", "required": false, "scope": "service", "desc": "增减内核能力", "example": "cap_add: [NET_ADMIN]" },
+        { "field": "privileged", "syntax": "privileged: true | false", "default": "false", "required": false, "scope": "service", "desc": "特权模式(不推荐)", "example": "privileged: false" },
+        { "field": "sysctls / ulimits", "syntax": "sysctls: { key: value }", "default": "—", "required": false, "scope": "service", "desc": "内核参数/资源限制", "example": "sysctls:\n  net.core.somaxconn: 1024" },
+        { "field": "tty / stdin_open", "syntax": "tty: true | stdin_open: true", "default": "false", "required": false, "scope": "service", "desc": "分配终端/标准输入", "example": "tty: true" }
+      ]
+    }
+  ]
+}

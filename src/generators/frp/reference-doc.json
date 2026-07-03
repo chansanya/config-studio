@@ -1,0 +1,411 @@
+{
+  "$schema": "frp-reference/v1",
+  "source": "https://gofrp.org/zh-cn/docs/features/",
+  "generated_at": "2026-07-03",
+  "note": "由 mcp__memory 知识图谱导出。字段均来自 gofrp.org 官方文档原文, slug 已校正。",
+  "entity_count": 32,
+  "relation_count": 14,
+  "entities": [
+    {
+      "name": "frp-TCP与UDP代理",
+      "entityType": "frp_proxy_type",
+      "observations": [
+        "类别: 代理类型",
+        "用途: frps监听remotePort透传到frpc本地端口,外网访问内网TCP/UDP服务",
+        "代理type: tcp / udp",
+        "proxies字段: name, type, localIP(默认127.0.0.1), localPort, remotePort",
+        "注意: 每个服务独占一个remotePort; frps侧需bindPort",
+        "文档: https://gofrp.org/zh-cn/docs/features/tcp-udp/"
+      ]
+    },
+    {
+      "name": "frp-HTTP与HTTPS代理",
+      "entityType": "frp_proxy_type",
+      "observations": [
+        "类别: 代理类型",
+        "用途: 按请求Host路由复用端口,无需每服务独占端口",
+        "代理type: http / https",
+        "frps侧字段: vhostHTTPPort, vhostHTTPSPort(按请求Host路由)",
+        "注意: https要求本地是HTTPS服务,frps不做TLS终止; 子功能含改Header/BasicAuth/二级域名/路由",
+        "文档: https://gofrp.org/zh-cn/docs/features/http-https/"
+      ]
+    },
+    {
+      "name": "frp-修改HTTP请求Header",
+      "entityType": "frp_proxy_type",
+      "observations": [
+        "类别: HTTP代理子功能",
+        "用途: 动态改写Host头,增删请求/响应Header(适配nginx虚拟主机等)",
+        "仅type=http可用",
+        "proxies字段: name, type=http, localPort, customDomains[], hostHeaderRewrite, requestHeaders.set.<k>, responseHeaders.set.<k>",
+        "注意: frp默认不修改转发数据",
+        "文档: https://gofrp.org/zh-cn/docs/features/http-https/header/"
+      ]
+    },
+    {
+      "name": "frp-HTTP-BasicAuth鉴权",
+      "entityType": "frp_proxy_type",
+      "observations": [
+        "类别: HTTP代理子功能",
+        "用途: 给web服务加HTTP Basic Auth用户名密码保护",
+        "仅type=http可用",
+        "proxies字段: name, type=http, localPort, customDomains[], httpUser, httpPassword",
+        "注意: 所有人共用frps HTTP端口,知道域名者默认能访问,故需此鉴权",
+        "文档: https://gofrp.org/zh-cn/docs/features/http-https/auth/"
+      ]
+    },
+    {
+      "name": "frp-自定义二级域名",
+      "entityType": "frp_proxy_type",
+      "observations": [
+        "类别: HTTP代理子功能",
+        "用途: 多人共用frps时用subdomain替代customDomains,通过{subdomain}.{subdomainHost}访问",
+        "type: http/https",
+        "proxies字段: name, type, localPort, subdomain, customDomains[](可并存)",
+        "frps侧字段: subdomainHost(如frps.com)",
+        "注意: 需泛域名*.subdomainHost解析到frps; 配subdomainHost后customDomains不能是其子/泛域名",
+        "文档: https://gofrp.org/zh-cn/docs/features/http-https/subdomain/"
+      ]
+    },
+    {
+      "name": "frp-URL路由",
+      "entityType": "frp_proxy_type",
+      "observations": [
+        "类别: HTTP代理子功能",
+        "用途: 按请求URL路径前缀转发到不同后端服务",
+        "仅type=http",
+        "proxies字段: name, type=http, localPort, customDomains[], locations[](URL前缀,如['/news','/about'])",
+        "注意: 仅最大前缀匹配,不支持正则; 未命中其它的请求落到locations=['/']的代理",
+        "文档: https://gofrp.org/zh-cn/docs/features/http-https/route/"
+      ]
+    },
+    {
+      "name": "frp-STCP与SUDP代理",
+      "entityType": "frp_proxy_type",
+      "observations": [
+        "类别: 代理类型",
+        "用途: Secret TCP/UDP,端口不直接暴露公网,需访问者部署frpc并用相同secretKey才能连接",
+        "代理type: stcp / sudp",
+        "proxies字段: name, type, secretKey, localIP, localPort",
+        "visitors字段: name, type, serverName(目标代理名), secretKey(须与proxy一致), bindAddr, bindPort",
+        "注意: 被访问端和访问端都要部署frpc; SUDP配置方式与STCP类似仅type不同",
+        "文档: https://gofrp.org/zh-cn/docs/features/stcp-sudp/ 生成器内置STCP/SUDP proxy与visitor示例输出"
+      ]
+    },
+    {
+      "name": "frp-XTCP代理",
+      "entityType": "frp_proxy_type",
+      "observations": [
+        "类别: 代理类型",
+        "用途: P2P打洞穿透,成功后流量直连不经frps,不受frps带宽限制",
+        "代理type: xtcp",
+        "proxies字段: name, type=xtcp, secretKey, localIP, localPort",
+        "visitors字段: name, type=xtcp, serverName, secretKey, bindAddr, bindPort, protocol(quic/kcp默认quic), keepTunnelOpen(bool), maxRetriesAnHour(默认8), minRetryInterval(默认90s), fallbackTo, fallbackTimeoutMs",
+        "frpc侧字段: natHoleStunServer(STUN服务器)",
+        "注意: 打洞成功率取决于NAT类型,可靠场景建议用STCP; bindPort=-1表示不监听物理端口只做fallback",
+        "文档: https://gofrp.org/zh-cn/docs/features/xtcp/ 生成器内置XTCP proxy与visitor示例输出"
+      ]
+    },
+    {
+      "name": "frp-TCPMUX代理",
+      "entityType": "frp_proxy_type",
+      "observations": [
+        "类别: 代理类型",
+        "用途: 单端口复用,按HTTP CONNECT请求中的host路由到不同代理(类似vhostHTTPPort)",
+        "代理type: tcpmux",
+        "proxies字段: name, type=tcpmux, multiplexer(目前只支持httpconnect), customDomains[](CONNECT的host匹配), localPort",
+        "frps侧字段: tcpmuxHTTPConnectPort(监听该端口收HTTP CONNECT请求)",
+        "注意: 复用器目前仅支持httpconnect",
+        "文档: https://gofrp.org/zh-cn/docs/features/tcpmux/"
+      ]
+    },
+    {
+      "name": "frp-负载均衡与健康检查",
+      "entityType": "frp_feature",
+      "observations": [
+        "类别: 通用功能",
+        "用途: 多个相同类型代理组成group分担流量,并对后端健康检查摘除故障节点",
+        "适用端: 代理配置",
+        "proxy字段: loadBalancer.group, loadBalancer.groupKey, healthCheck.type(tcp/http), healthCheck.timeoutSeconds, healthCheck.maxFailed, healthCheck.intervalSeconds, healthCheck.path(仅http)",
+        "注意: 支持代理类型tcp/http/https/tcpmux; 同组tcp的remotePort须一致,http的customDomains/subdomain/locations须一致; 分发策略随机",
+        "文档: https://gofrp.org/zh-cn/docs/features/common/load-balancer/"
+      ]
+    },
+    {
+      "name": "frp-获取用户真实IP",
+      "entityType": "frp_feature",
+      "observations": [
+        "类别: 通用功能",
+        "用途: 通过X-Forwarded-For或Proxy Protocol把访问者真实IP传给本地服务",
+        "适用端: 代理配置",
+        "proxy字段: transport.proxyProtocolVersion(v1/v2,默认不启用)",
+        "注意: X-Forwarded-For仅http代理默认启用(含https2http/https2https插件代理); Proxy Protocol支持TCP和UDP,本地服务须支持解析(nginx/haproxy); UDP启用后保留源IP",
+        "文档: https://gofrp.org/zh-cn/docs/features/common/realip/"
+      ]
+    },
+    {
+      "name": "frp-端口范围映射",
+      "entityType": "frp_feature",
+      "observations": [
+        "类别: 通用功能",
+        "用途: 用Go template的range+内置parseNumberRangePair批量生成一组端口映射代理",
+        "适用端: frpc代理配置(模板渲染)",
+        "模板函数: parseNumberRangePair '6000-6006,6007' '6000-6006,6007'(前local后remote,支持a-b,c语法)",
+        "注意: v0.56.0新增; 是模板语法不再是旧range:前缀; 命名需自行保证唯一(如tcp-{{ $v.First }})",
+        "文档: https://gofrp.org/zh-cn/docs/features/common/range/"
+      ]
+    },
+    {
+      "name": "frp-客户端运维",
+      "entityType": "frp_feature",
+      "observations": [
+        "类别: 通用功能",
+        "用途: frpc动态reload/状态查询/通过上游代理连frps",
+        "适用端: frpc",
+        "字段: webServer.addr, webServer.port(启用reload/status API必需), transport.proxyURL(http://user:pwd@host:port 或 socks5://user:pwd@host:port)",
+        "命令: frpc reload -c frpc.toml / frpc status -c frpc.toml",
+        "注意: reload只能更新代理相关配置,公共部分除start外不能动态修改; transport.proxyURL仅在protocol=tcp时生效",
+        "文档: https://gofrp.org/zh-cn/docs/features/common/client/"
+      ]
+    },
+    {
+      "name": "frp-服务端管理",
+      "entityType": "frp_feature",
+      "observations": [
+        "类别: 通用功能",
+        "用途: 端口白名单/端口复用/代理级限速",
+        "适用端: frps+代理配置",
+        "frps字段: allowPorts[]({start,end}或{single}), vhostHTTPPort/vhostHTTPSPort/bindPort可设为同端口实现复用, transport.tls.disableCustomTLSFirstByte(复用前须false)",
+        "proxy字段: transport.bandwidthLimit(如1MB,仅支持MB/KB), transport.bandwidthLimitMode(server=服务端限速,默认客户端限速)",
+        "注意: 端口复用依赖协议探测; vhostHTTPSPort==bindPort前须先设disableCustomTLSFirstByte=false",
+        "文档: https://gofrp.org/zh-cn/docs/features/common/server-manage/"
+      ]
+    },
+    {
+      "name": "frp-客户端插件",
+      "entityType": "frp_feature",
+      "observations": [
+        "类别: 通用功能",
+        "用途: frpc内置提供静态文件/HTTP/SOCKS5代理/协议转换等本地服务,无需另起进程",
+        "适用端: 代理配置[proxies.plugin](启用插件后不再使用localIP/localPort)",
+        "公共字段: plugin.type(必填)",
+        "插件类型: http_proxy/socks5/static_file/unix_domain_socket/http2https/https2http/https2https/tls2raw/virtual_net(共9种)",
+        "文档: https://gofrp.org/zh-cn/docs/features/common/client-plugin/ 详细字段见 /docs/reference/client-plugin/"
+      ]
+    },
+    {
+      "name": "frp-服务端插件",
+      "entityType": "frp_feature",
+      "observations": [
+        "类别: 通用功能",
+        "用途: frps通过HTTP/HTTPS RPC调用外部插件进程,在Login/NewProxy等节点做鉴权或改写",
+        "适用端: frps([[httpPlugins]]) + frpc(metadatas)",
+        "frps字段: [[httpPlugins]] name, addr(host:port), path(如/handler), ops[](Login/NewProxy/CloseProxy/Ping/NewWorkConn/NewUserConn), tls_verify",
+        "frpc字段: 全局metadatas.<k>(随Login发送), 代理级[[proxies]]metadatas.<k>(随NewProxy发送)",
+        "RPC协议: POST /handler?version=0.1.0&op=<Op> Body含content; 三种回应:reject+reject_reason / unchange:true / unchange:false+content替换",
+        "注意: 插件独立进程监听独立端口; CloseProxy在大量proxy时易超连接数",
+        "文档: https://gofrp.org/zh-cn/docs/features/common/server-plugin/"
+      ]
+    },
+    {
+      "name": "frp-SSH隧道网关",
+      "entityType": "frp_feature",
+      "observations": [
+        "类别: 通用功能",
+        "用途: frps监听一个ssh端口,客户端用ssh -R直接打反向隧道,无需frpc",
+        "适用端: frps(sshTunnelGateway) + 客户端原生ssh命令",
+        "frps字段: sshTunnelGateway.bindPort(必填), privateKeyFile, autoGenPrivateKeyPath(默认./.autogen_ssh_key), authorizedKeysFile(公钥鉴权,空则不鉴权)",
+        "客户端命令: ssh -R :80:{local_ip:port} v0@{frps} -p {port} {tcp|http|https|stcp|tcpmux} --remote_port {p} --proxy_name {n} --token {t}",
+        "注意: v0.53.0新增; 登录用户名固定v0无含义; frps不支持ssh密码认证只支持authorized_keys公钥; 强烈建议至少开token或authorizedKeysFile之一; 换私钥需清客户端known_hosts",
+        "文档: https://gofrp.org/zh-cn/docs/features/common/ssh/"
+      ]
+    },
+    {
+      "name": "frp插件-http_proxy",
+      "entityType": "frp_plugin",
+      "observations": [
+        "类别: 客户端插件",
+        "plugin.type: http_proxy",
+        "用途: 在frpc内提供本地HTTP代理服务",
+        "字段: type=http_proxy, httpUser(可选), httpPassword(可选)"
+      ]
+    },
+    {
+      "name": "frp插件-socks5",
+      "entityType": "frp_plugin",
+      "observations": [
+        "类别: 客户端插件",
+        "plugin.type: socks5",
+        "用途: 在frpc内提供本地SOCKS5代理服务",
+        "字段: type=socks5, username(可选), password(可选)"
+      ]
+    },
+    {
+      "name": "frp插件-static_file",
+      "entityType": "frp_plugin",
+      "observations": [
+        "类别: 客户端插件",
+        "plugin.type: static_file",
+        "用途: 对外提供本地静态文件访问服务",
+        "字段: type=static_file, localPath(必填,静态文件目录), stripPrefix(去除请求路径前缀), httpUser, httpPassword(可选)"
+      ]
+    },
+    {
+      "name": "frp插件-unix_domain_socket",
+      "entityType": "frp_plugin",
+      "observations": [
+        "类别: 客户端插件",
+        "plugin.type: unix_domain_socket",
+        "用途: 将本地Unix域套接字服务暴露给外部",
+        "字段: type=unix_domain_socket, unixPath(必填,UNIX域套接字地址)"
+      ]
+    },
+    {
+      "name": "frp插件-http2https",
+      "entityType": "frp_plugin",
+      "observations": [
+        "类别: 客户端插件",
+        "plugin.type: http2https",
+        "用途: 对外HTTP,本地后端为HTTPS服务(协议转换)",
+        "字段: type=http2https, localAddr(必填,本地HTTPS服务地址), hostHeaderRewrite(替换Host头), requestHeaders(请求Header操作)"
+      ]
+    },
+    {
+      "name": "frp插件-https2http",
+      "entityType": "frp_plugin",
+      "observations": [
+        "类别: 客户端插件",
+        "plugin.type: https2http",
+        "用途: 对外HTTPS(frp做TLS终止),本地为HTTP服务",
+        "字段: type=https2http, localAddr(必填,本地HTTPS服务地址), hostHeaderRewrite, requestHeaders, enableHTTP2(默认true), crtPath(TLS证书), keyPath(TLS私钥)"
+      ]
+    },
+    {
+      "name": "frp插件-https2https",
+      "entityType": "frp_plugin",
+      "observations": [
+        "类别: 客户端插件",
+        "plugin.type: https2https",
+        "用途: 对外HTTPS且本地也为HTTPS(frp做TLS终止后再加密回本地)",
+        "字段: type=https2https, localAddr(必填), hostHeaderRewrite, requestHeaders, enableHTTP2(默认true), crtPath, keyPath"
+      ]
+    },
+    {
+      "name": "frp插件-tls2raw",
+      "entityType": "frp_plugin",
+      "observations": [
+        "类别: 客户端插件",
+        "plugin.type: tls2raw",
+        "用途: 对外提供TLS,frp剥离TLS后以raw TCP连接本地服务",
+        "字段: type=tls2raw, localAddr(必填,本地服务地址), crtPath(TLS证书), keyPath(TLS私钥)"
+      ]
+    },
+    {
+      "name": "frp插件-virtual_net",
+      "entityType": "frp_plugin",
+      "observations": [
+        "类别: 客户端插件",
+        "plugin.type: virtual_net",
+        "用途: 虚拟网络插件(配合frps虚拟网络组网)",
+        "字段: type=virtual_net(特性页未列特有字段); 对应visitor插件字段含destinationIP(目标虚拟IP,通常为服务端虚拟网络地址)"
+      ]
+    },
+    {
+      "name": "frp-配置文件",
+      "entityType": "frp_feature",
+      "observations": [
+        "类别: 通用功能",
+        "用途: frp支持的配置文件格式/模板渲染/校验/拆分",
+        "适用端: frps+frpc",
+        "格式: v0.52.0起支持TOML/YAML/JSON,INI已弃用将移除,新功能仅在新格式可用",
+        "模板渲染: Go标准格式,环境变量须以.Envs前缀(如{{ .Envs.FRP_SERVER_ADDR }})",
+        "YAML: 支持&anchor与<<:*anchor合并及点前缀字段(类Docker Compose x-),严格模式下无需--strict-config=false",
+        "校验: frpc/frps verify -c xx.toml; 默认严格模式,--strict-config=false关闭",
+        "拆分: includes=['./confd/*.toml'](被引入文件只能含proxy配置,通用参数必须在主配置)",
+        "文档: https://gofrp.org/zh-cn/docs/features/common/configure/"
+      ]
+    },
+    {
+      "name": "frp-监控",
+      "entityType": "frp_feature",
+      "observations": [
+        "类别: 通用功能",
+        "用途: frps的内存监控与Prometheus监控",
+        "适用端: frps",
+        "frps字段: enablePrometheus(bool,提供Prometheus接口,必须同时启用webServer才生效); 监控接口复用Dashboard地址路径/metrics",
+        "注意: 内存监控默认随Dashboard启用,进程重启清空,数据最多保留7天; Dashboard监控API目前不规范不建议直接用",
+        "文档: https://gofrp.org/zh-cn/docs/features/common/monitor/"
+      ]
+    },
+    {
+      "name": "frp-身份认证",
+      "entityType": "frp_feature",
+      "observations": [
+        "类别: 通用功能",
+        "用途: frpc与frps之间身份验证,支持token与oidc(默认token)",
+        "适用端: frps+frpc",
+        "frps字段: auth.token(明文,与tokenSource互斥), auth.tokenSource.type(file/exec,v0.66.0+), auth.tokenSource.file.path, auth.tokenSource.exec.command/args/env, auth.method(oidc), auth.oidc.issuer/audience/skipExpiryCheck/skipIssuerCheck",
+        "frpc字段: auth.token/tokenSource.*, auth.method(oidc), auth.oidc.clientID/clientSecret/audience/tokenEndpointURL/scope/additionalEndpointParams/trustedCaFile/insecureSkipVerify/proxyURL/tokenSource",
+        "注意: token与tokenSource互斥二选一; token文件建议权限600不支持运行时重载; exec需启动加--allow-unsafe=TokenSourceExec; OIDC走Client Credentials Grant(RFC6749§4.4)",
+        "文档: https://gofrp.org/zh-cn/docs/features/common/authentication/"
+      ]
+    },
+    {
+      "name": "frp-Web界面Dashboard",
+      "entityType": "frp_feature",
+      "observations": [
+        "类别: 通用功能",
+        "用途: frps服务端Dashboard与frpc客户端Admin UI(含Store动态代理管理)",
+        "适用端: frps+frpc",
+        "frps字段: webServer.addr(默认127.0.0.1,公网访问改0.0.0.0), webServer.port(必填,如7500), webServer.user/password(BasicAuth可选), webServer.tls.certFile/keyFile(启用HTTPS)",
+        "frpc字段: webServer.addr(默认127.0.0.1), webServer.port(如7400), webServer.user/password; store.path(持久化如./db.json,启用后支持运行时Web UI/API增删改代理与visitor重启自动恢复)",
+        "注意: Dashboard未对大量proxy数据做展示优化; 客户端Admin UI默认本地,外网暴露需评估风险; Store管理能力依赖webServer启用",
+        "文档: https://gofrp.org/zh-cn/docs/features/common/ui/"
+      ]
+    },
+    {
+      "name": "frp-通信安全及优化",
+      "entityType": "frp_feature",
+      "observations": [
+        "类别: 通用功能",
+        "用途: 单代理加密压缩/TCP多路复用/连接池/KCP/QUIC底层协议",
+        "适用端: frps+frpc+代理",
+        "proxy字段: transport.useEncryption(bool,aes-128-cfb), transport.useCompression(bool,snappy)",
+        "frps/frpc字段: transport.tcpMux(bool,两端必须一致,默认启用)",
+        "frps字段: transport.maxPoolCount(每代理连接池上限默认5), kcpBindPort, quicBindPort(均UDP可与bindPort相同)",
+        "frpc字段: transport.poolCount(预创建连接数), transport.protocol(tcp默认/kcp/quic)",
+        "注意: 启用TLS后流量已全局加密无需再useEncryption(新版TLS默认启用); tcpMux启用后连接池提升有限; KCP/QUIC走UDP弱网更优但KCP有额外流量消耗",
+        "文档: https://gofrp.org/zh-cn/docs/features/common/network/network/"
+      ]
+    },
+    {
+      "name": "frp-自定义TLS协议加密",
+      "entityType": "frp_feature",
+      "observations": [
+        "类别: 通用功能",
+        "用途: frpc与frps之间TLS流量加密及单向/双向身份验证",
+        "适用端: frps+frpc",
+        "frps字段(transport.tls.*): force(true时只收TLS客户端,trustedCaFile有效时默认开), certFile(服务端证书), keyFile(私钥), trustedCaFile(校验客户端证书的CA)",
+        "frpc字段(transport.tls.*): enable(v0.50.0起默认true), certFile(client证书), keyFile(client私钥), trustedCaFile(校验服务端证书CA), disableCustomTLSFirstByte(默认true,为true不发0x17字节且无法与vhostHTTPSPort端口复用)",
+        "注意: v0.50.0起enable默认true,frps未配证书用随机证书加密,默认frpc开TLS但不校验frps证书; 启用TLS后除xtcp外无需useEncryption; 三种校验模式(frpc单向验frps/frps单向验frpc/双向); Go1.15起废弃CommonName推荐SAN证书",
+        "文档: https://gofrp.org/zh-cn/docs/features/common/network/network-tls/"
+      ]
+    }
+  ],
+  "relations": [
+    { "from": "frp-修改HTTP请求Header", "relationType": "是HTTP代理的子功能", "to": "frp-HTTP与HTTPS代理" },
+    { "from": "frp-HTTP-BasicAuth鉴权", "relationType": "是HTTP代理的子功能", "to": "frp-HTTP与HTTPS代理" },
+    { "from": "frp-自定义二级域名", "relationType": "是HTTP代理的子功能", "to": "frp-HTTP与HTTPS代理" },
+    { "from": "frp-URL路由", "relationType": "是HTTP代理的子功能", "to": "frp-HTTP与HTTPS代理" },
+    { "from": "frp插件-http_proxy", "relationType": "是客户端插件类型", "to": "frp-客户端插件" },
+    { "from": "frp插件-socks5", "relationType": "是客户端插件类型", "to": "frp-客户端插件" },
+    { "from": "frp插件-static_file", "relationType": "是客户端插件类型", "to": "frp-客户端插件" },
+    { "from": "frp插件-unix_domain_socket", "relationType": "是客户端插件类型", "to": "frp-客户端插件" },
+    { "from": "frp插件-http2https", "relationType": "是客户端插件类型", "to": "frp-客户端插件" },
+    { "from": "frp插件-https2http", "relationType": "是客户端插件类型", "to": "frp-客户端插件" },
+    { "from": "frp插件-https2https", "relationType": "是客户端插件类型", "to": "frp-客户端插件" },
+    { "from": "frp插件-tls2raw", "relationType": "是客户端插件类型", "to": "frp-客户端插件" },
+    { "from": "frp插件-virtual_net", "relationType": "是客户端插件类型", "to": "frp-客户端插件" },
+    { "from": "frp-自定义TLS协议加密", "relationType": "细化于", "to": "frp-通信安全及优化" }
+  ]
+}

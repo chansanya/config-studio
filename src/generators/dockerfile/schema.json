@@ -1,0 +1,167 @@
+{
+  "$schema": "config-generator/v1",
+  "id": "dockerfile",
+  "state": {
+    "nodeVersion": "22-alpine",
+    "packageManager": "npm",
+    "appDir": "/app",
+    "installCommand": "npm ci",
+    "buildCommand": "npm run build",
+    "outputDir": "dist",
+    "runtime": "nginx",
+    "nginxImage": "nginx:1.27-alpine",
+    "caddyImage": "caddy:2-alpine",
+    "exposePort": 80,
+    "enableMultiStage": true,
+    "enableCorepack": true,
+    "enableHealthcheck": true,
+    "healthcheckPath": "/",
+    "envVars": "",
+    "extraCopyInstructions": "",
+    "extraRunInstructions": "",
+    "entrypointInstruction": "",
+    "cmdInstruction": ""
+  },
+  "fieldGroups": [
+    {
+      "title": "构建阶段",
+      "icon": "Terminal",
+      "fields": [
+        {
+          "key": "nodeVersion",
+          "label": "Node 镜像",
+          "hint": "例如 22-alpine、20-alpine",
+          "type": "text"
+        },
+        {
+          "key": "packageManager",
+          "label": "包管理器",
+          "hint": "影响默认安装命令和 Corepack",
+          "type": "select",
+          "options": [
+            { "value": "npm", "label": "npm" },
+            { "value": "pnpm", "label": "pnpm" },
+            { "value": "yarn", "label": "yarn" }
+          ]
+        },
+        {
+          "key": "appDir",
+          "label": "WORKDIR",
+          "hint": "容器内项目目录",
+          "type": "text"
+        },
+        {
+          "key": "installCommand",
+          "label": "安装命令",
+          "hint": "如 npm ci / pnpm install --frozen-lockfile",
+          "type": "text"
+        },
+        {
+          "key": "buildCommand",
+          "label": "构建命令",
+          "hint": "如 npm run build",
+          "type": "text"
+        },
+        {
+          "key": "outputDir",
+          "label": "输出目录",
+          "hint": "前端构建产物目录",
+          "type": "text"
+        },
+        {
+          "key": "enableCorepack",
+          "label": "启用 Corepack",
+          "hint": "pnpm/yarn 推荐开启",
+          "type": "toggle"
+        },
+        {
+          "key": "envVars",
+          "label": "ENV",
+          "hint": "每行或逗号分隔 KEY=value，会生成 ENV 指令",
+          "type": "textarea"
+        },
+        {
+          "key": "extraCopyInstructions",
+          "label": "额外 COPY",
+          "hint": "每行一条 COPY 参数，如 public ./public，也可填写完整 COPY ...",
+          "type": "textarea"
+        },
+        {
+          "key": "extraRunInstructions",
+          "label": "额外 RUN",
+          "hint": "每行一条 RUN 命令，如 npm run lint，也可填写完整 RUN ...",
+          "type": "textarea"
+        }
+      ]
+    },
+    {
+      "title": "运行阶段",
+      "icon": "Server",
+      "fields": [
+        {
+          "key": "enableMultiStage",
+          "label": "多阶段构建",
+          "hint": "构建镜像更小，推荐开启",
+          "type": "toggle"
+        },
+        {
+          "key": "runtime",
+          "label": "运行镜像",
+          "hint": "静态站点运行容器",
+          "type": "select",
+          "options": [
+            { "value": "nginx", "label": "nginx" },
+            { "value": "caddy", "label": "caddy" }
+          ]
+        },
+        {
+          "key": "nginxImage",
+          "label": "Nginx 镜像",
+          "hint": "runtime=nginx 时使用",
+          "type": "text",
+          "when": { "key": "runtime", "value": "nginx" }
+        },
+        {
+          "key": "caddyImage",
+          "label": "Caddy 镜像",
+          "hint": "runtime=caddy 时使用",
+          "type": "text",
+          "when": { "key": "runtime", "value": "caddy" }
+        },
+        {
+          "key": "exposePort",
+          "label": "EXPOSE",
+          "hint": "容器暴露端口",
+          "type": "number",
+          "min": 1,
+          "max": 65535
+        },
+        {
+          "key": "enableHealthcheck",
+          "label": "启用 HEALTHCHECK",
+          "hint": "生成容器健康检查",
+          "type": "toggle"
+        },
+        {
+          "key": "healthcheckPath",
+          "label": "健康检查路径",
+          "hint": "如 / 或 /health",
+          "type": "text",
+          "when": "enableHealthcheck"
+        },
+        {
+          "key": "entrypointInstruction",
+          "label": "ENTRYPOINT",
+          "hint": "可填 exec 形式，如 [\"nginx\", \"-g\", \"daemon off;\"]",
+          "type": "text"
+        },
+        {
+          "key": "cmdInstruction",
+          "label": "CMD",
+          "hint": "可填 exec 形式或 shell 命令，留空时沿用基础镜像默认值",
+          "type": "text"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,320 @@
+{
+  "$schema": "config-generator/v1",
+  "id": "redis",
+  "state": {
+    "bind": "127.0.0.1 -::1",
+    "port": 6379,
+    "protectedMode": true,
+    "enableTls": false,
+    "tlsPort": 6380,
+    "tlsCertFile": "/etc/redis/tls/redis.crt",
+    "tlsKeyFile": "/etc/redis/tls/redis.key",
+    "tlsCaCertFile": "/etc/redis/tls/ca.crt",
+    "enableAuth": true,
+    "requirepass": "change-me-strong-password",
+    "aclfile": "",
+    "timeout": 0,
+    "tcpKeepalive": 300,
+    "databases": 16,
+    "daemonize": false,
+    "supervised": "no",
+    "loglevel": "notice",
+    "logfile": "",
+    "dir": "/data",
+    "dbfilename": "dump.rdb",
+    "saveRules": "900 1\n300 10\n60 10000",
+    "appendonly": true,
+    "appendfilename": "appendonly.aof",
+    "appendfsync": "everysec",
+    "maxmemory": "256mb",
+    "maxmemoryPolicy": "allkeys-lru",
+    "lazyfreeLazyEviction": true,
+    "enableReplica": false,
+    "replicaof": "10.0.0.10 6379",
+    "masterauth": "",
+    "slowlogLogSlowerThan": 10000,
+    "slowlogMaxLen": 128,
+    "notifyKeyspaceEvents": "",
+    "extraDirectives": ""
+  },
+  "fieldGroups": [
+    {
+      "title": "监听与安全",
+      "icon": "Shield",
+      "fields": [
+        {
+          "key": "bind",
+          "label": "bind",
+          "hint": "监听地址，公网开放前务必确认防火墙和鉴权",
+          "type": "text"
+        },
+        {
+          "key": "port",
+          "label": "port",
+          "hint": "Redis TCP 端口",
+          "type": "number",
+          "min": 0,
+          "max": 65535
+        },
+        {
+          "key": "protectedMode",
+          "label": "protected-mode",
+          "hint": "未设置鉴权且非本机访问时建议开启",
+          "type": "toggle"
+        },
+        {
+          "key": "enableAuth",
+          "label": "启用 requirepass",
+          "hint": "生成 requirepass，生产环境强烈建议开启",
+          "type": "toggle"
+        },
+        {
+          "key": "requirepass",
+          "label": "requirepass",
+          "hint": "客户端 AUTH 使用的密码",
+          "type": "text",
+          "when": "enableAuth"
+        },
+        {
+          "key": "aclfile",
+          "label": "aclfile",
+          "hint": "ACL 用户文件路径，留空不生成",
+          "type": "text"
+        },
+        {
+          "key": "enableTls",
+          "label": "启用 TLS",
+          "hint": "生成 tls-port 和证书路径",
+          "type": "toggle"
+        },
+        {
+          "key": "tlsPort",
+          "label": "tls-port",
+          "hint": "TLS 监听端口",
+          "type": "number",
+          "min": 0,
+          "max": 65535,
+          "when": "enableTls"
+        },
+        {
+          "key": "tlsCertFile",
+          "label": "tls-cert-file",
+          "hint": "服务端证书路径",
+          "type": "text",
+          "when": "enableTls"
+        },
+        {
+          "key": "tlsKeyFile",
+          "label": "tls-key-file",
+          "hint": "服务端私钥路径",
+          "type": "text",
+          "when": "enableTls"
+        },
+        {
+          "key": "tlsCaCertFile",
+          "label": "tls-ca-cert-file",
+          "hint": "CA 证书路径",
+          "type": "text",
+          "when": "enableTls"
+        }
+      ]
+    },
+    {
+      "title": "运行参数",
+      "icon": "Settings2",
+      "fields": [
+        {
+          "key": "timeout",
+          "label": "timeout",
+          "hint": "客户端空闲超时秒数，0 表示不主动断开",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "key": "tcpKeepalive",
+          "label": "tcp-keepalive",
+          "hint": "TCP keepalive 秒数",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "key": "databases",
+          "label": "databases",
+          "hint": "逻辑数据库数量",
+          "type": "number",
+          "min": 1
+        },
+        {
+          "key": "daemonize",
+          "label": "daemonize",
+          "hint": "容器里通常保持 no",
+          "type": "toggle"
+        },
+        {
+          "key": "supervised",
+          "label": "supervised",
+          "hint": "no/systemd/upstart/supervisor",
+          "type": "select",
+          "options": [
+            { "value": "no", "label": "no" },
+            { "value": "systemd", "label": "systemd" },
+            { "value": "upstart", "label": "upstart" },
+            { "value": "supervisor", "label": "supervisor" }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "持久化",
+      "icon": "Database",
+      "fields": [
+        {
+          "key": "dir",
+          "label": "dir",
+          "hint": "RDB/AOF 文件目录",
+          "type": "text"
+        },
+        {
+          "key": "dbfilename",
+          "label": "dbfilename",
+          "hint": "RDB 文件名",
+          "type": "text"
+        },
+        {
+          "key": "saveRules",
+          "label": "save",
+          "hint": "每行一条 RDB 保存规则，如 900 1",
+          "type": "textarea"
+        },
+        {
+          "key": "appendonly",
+          "label": "appendonly",
+          "hint": "开启 AOF，重启后数据恢复更稳",
+          "type": "toggle"
+        },
+        {
+          "key": "appendfilename",
+          "label": "appendfilename",
+          "hint": "AOF 文件名",
+          "type": "text",
+          "when": "appendonly"
+        },
+        {
+          "key": "appendfsync",
+          "label": "appendfsync",
+          "hint": "AOF 刷盘策略",
+          "type": "select",
+          "options": [
+            { "value": "always", "label": "always" },
+            { "value": "everysec", "label": "everysec" },
+            { "value": "no", "label": "no" }
+          ],
+          "when": "appendonly"
+        }
+      ]
+    },
+    {
+      "title": "内存与淘汰",
+      "icon": "Boxes",
+      "fields": [
+        {
+          "key": "maxmemory",
+          "label": "maxmemory",
+          "hint": "如 256mb、2gb，留空不限制",
+          "type": "text"
+        },
+        {
+          "key": "maxmemoryPolicy",
+          "label": "maxmemory-policy",
+          "hint": "内存达到上限后的淘汰策略",
+          "type": "select",
+          "options": [
+            { "value": "noeviction", "label": "noeviction" },
+            { "value": "allkeys-lru", "label": "allkeys-lru" },
+            { "value": "volatile-lru", "label": "volatile-lru" },
+            { "value": "allkeys-lfu", "label": "allkeys-lfu" },
+            { "value": "volatile-lfu", "label": "volatile-lfu" },
+            { "value": "allkeys-random", "label": "allkeys-random" },
+            { "value": "volatile-random", "label": "volatile-random" },
+            { "value": "volatile-ttl", "label": "volatile-ttl" }
+          ]
+        },
+        {
+          "key": "lazyfreeLazyEviction",
+          "label": "lazyfree-lazy-eviction",
+          "hint": "异步释放淘汰 key，降低阻塞峰值",
+          "type": "toggle"
+        }
+      ]
+    },
+    {
+      "title": "副本与观测",
+      "icon": "Monitor",
+      "fields": [
+        {
+          "key": "enableReplica",
+          "label": "作为副本",
+          "hint": "生成 replicaof 和 masterauth",
+          "type": "toggle"
+        },
+        {
+          "key": "replicaof",
+          "label": "replicaof",
+          "hint": "主节点 host port",
+          "type": "text",
+          "when": "enableReplica"
+        },
+        {
+          "key": "masterauth",
+          "label": "masterauth",
+          "hint": "主节点 requirepass，留空不生成",
+          "type": "text",
+          "when": "enableReplica"
+        },
+        {
+          "key": "loglevel",
+          "label": "loglevel",
+          "hint": "debug/verbose/notice/warning",
+          "type": "select",
+          "options": [
+            { "value": "debug", "label": "debug" },
+            { "value": "verbose", "label": "verbose" },
+            { "value": "notice", "label": "notice" },
+            { "value": "warning", "label": "warning" }
+          ]
+        },
+        {
+          "key": "logfile",
+          "label": "logfile",
+          "hint": "空字符串表示输出到 stdout",
+          "type": "text"
+        },
+        {
+          "key": "slowlogLogSlowerThan",
+          "label": "slowlog-log-slower-than",
+          "hint": "慢查询阈值，单位微秒，负数关闭",
+          "type": "number"
+        },
+        {
+          "key": "slowlogMaxLen",
+          "label": "slowlog-max-len",
+          "hint": "慢查询日志最大条数",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "key": "notifyKeyspaceEvents",
+          "label": "notify-keyspace-events",
+          "hint": "键空间通知，如 Ex，留空不生成",
+          "type": "text"
+        },
+        {
+          "key": "extraDirectives",
+          "label": "额外指令",
+          "hint": "每行一条 redis.conf 指令，会原样追加",
+          "type": "textarea"
+        }
+      ]
+    }
+  ]
+}
