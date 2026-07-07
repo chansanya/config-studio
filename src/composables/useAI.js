@@ -5,12 +5,27 @@
 
 const AI_ENDPOINT = "/api/ai";
 const UNAVAILABLE_MESSAGE = "AI 暂时不可用，请稍后重试或检查服务配置。";
+let aiInfoPromise = null;
+
+export async function getAIInfo() {
+  if (!aiInfoPromise) {
+    aiInfoPromise = fetch(AI_ENDPOINT)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => ({
+        ok: Boolean(data?.model),
+        model: data?.model || "",
+      }))
+      .catch(() => ({ ok: false, model: "" }));
+  }
+  return aiInfoPromise;
+}
 
 // 调用 AI 代理(SSE 流式)。
 // payload: { mode: "verify"|"generate"|"usage", tool, userInput?, config?, reference? }
 // onDelta(delta, full): 每收到一段增量文本时回调, delta 是本次片段, full 是已累计的完整内容。
-// 返回 { ok: true, content } 或 { ok: false, error }。content 即最终完整文本。
-export async function askAI(payload, onDelta) {
+// onMeta(meta): 每收到后端元信息时回调, 例如当前使用的模型名。
+// 返回 { ok: true, content, meta } 或 { ok: false, error }。content 即最终完整文本。
+export async function askAI(payload, onDelta, onMeta) {
   let res;
   try {
     res = await fetch(AI_ENDPOINT, {
@@ -40,6 +55,7 @@ export async function askAI(payload, onDelta) {
   const reader = res.body.getReader();
   let buffer = "";
   let full = "";
+  let meta = {};
 
   try {
     while (true) {
@@ -70,17 +86,22 @@ export async function askAI(payload, onDelta) {
         if (obj.error) {
           return { ok: false, error: obj.error };
         }
+        if (obj.meta && typeof obj.meta === "object") {
+          meta = { ...meta, ...obj.meta };
+          onMeta?.(meta);
+          continue;
+        }
         if (typeof obj.delta === "string" && obj.delta) {
           full += obj.delta;
           onDelta?.(obj.delta, full);
         }
         if (obj.done) {
-          return { ok: true, content: full };
+          return { ok: true, content: full, meta };
         }
       }
     }
     // 流自然结束但没显式 done,也按完成处理。
-    return { ok: true, content: full };
+    return { ok: true, content: full, meta };
   } catch (e) {
     return { ok: false, error: UNAVAILABLE_MESSAGE };
   }

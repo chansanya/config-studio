@@ -1,5 +1,5 @@
 <script setup>
-import { computed, markRaw, nextTick, ref, watch } from "vue";
+import { computed, markRaw, nextTick, onMounted, ref, watch } from "vue";
 import {
   NButton,
   NCollapse,
@@ -41,7 +41,7 @@ import {
   Trash2,
 } from "@lucide/vue";
 import { createGenerators } from "../generators";
-import { askAI } from "../composables/useAI";
+import { askAI, getAIInfo } from "../composables/useAI";
 import AIPanel from "./AIPanel.vue";
 import FieldControl from "./FieldControl.vue";
 
@@ -123,9 +123,16 @@ const panelLead = computed(() => activeGenerator.value.panelLead());
 const aiUsageText = ref("");
 const usageLoading = ref(false);
 const usageError = ref("");
+const usageModel = ref("");
+const aiProviderModel = ref("");
 const usageCache = new Map();
 let usageRequestSerial = 0;
 let usageTimer = null;
+
+onMounted(async () => {
+  const info = await getAIInfo();
+  if (info.ok) aiProviderModel.value = info.model;
+});
 
 // 切换生成器时回到基础配置和配置预览，避免停留在上一个工具的功能块位置。
 watch(activeGeneratorId, () => {
@@ -133,6 +140,7 @@ watch(activeGeneratorId, () => {
   outputTab.value = "config";
   aiUsageText.value = "";
   usageError.value = "";
+  usageModel.value = "";
   usageLoading.value = false;
   nextTick(() => scrollToSection("field-0", false));
 });
@@ -315,7 +323,9 @@ async function generateUsageWithAI() {
   }
 
   if (usageCache.has(cacheKey)) {
-    aiUsageText.value = usageCache.get(cacheKey);
+    const cached = usageCache.get(cacheKey);
+    aiUsageText.value = cached.content;
+    usageModel.value = cached.model || "";
     usageError.value = "";
     usageLoading.value = false;
     return;
@@ -323,17 +333,25 @@ async function generateUsageWithAI() {
 
   usageLoading.value = true;
   usageError.value = "";
+  usageModel.value = "";
 
-  const res = await askAI({
-    mode: "usage",
-    tool: generator.id,
-    config: configText,
-    reference: generator.getReference?.(),
-  });
+  const res = await askAI(
+    {
+      mode: "usage",
+      tool: generator.id,
+      config: configText,
+      reference: generator.getReference?.(),
+    },
+    undefined,
+    (meta) => {
+      usageModel.value = meta.model || "";
+    },
+  );
 
   if (requestId !== usageRequestSerial) return;
 
   usageLoading.value = false;
+  usageModel.value = res.meta?.model || "";
   if (!res.ok) {
     aiUsageText.value = "";
     usageError.value = res.error || "使用说明暂时不可用，请稍后重试。";
@@ -345,7 +363,10 @@ async function generateUsageWithAI() {
     usageError.value = "AI 没有返回可用的使用说明。";
     return;
   }
-  usageCache.set(cacheKey, aiUsageText.value);
+  usageCache.set(cacheKey, {
+    content: aiUsageText.value,
+    model: usageModel.value,
+  });
 }
 </script>
 
@@ -357,7 +378,7 @@ async function generateUsageWithAI() {
           <Settings2 :size="23" aria-hidden="true" />
         </div>
         <div class="brand-copy">
-          <strong>配置生成工作台</strong>
+          <strong>配置工坊</strong>
           <span>面向目标服务的 FRP / Docker / Web Server 配置工作台</span>
         </div>
       </div>
@@ -778,7 +799,7 @@ async function generateUsageWithAI() {
             <div class="usage-shell">
               <div class="usage-bar">
                 <Terminal :size="16" aria-hidden="true" />
-                <span>AI 生成的落地说明</span>
+                <small>由 {{ usageModel || aiProviderModel || "AI" }} 提供支持</small>
                 <NSpin v-if="usageLoading" size="small" />
               </div>
               <NInput

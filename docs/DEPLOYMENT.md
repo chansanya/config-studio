@@ -1,6 +1,6 @@
 # 部署说明
 
-这个项目发布的是“配置生成工作台页面”本身，不是右侧生成出来的 FRP / Dockerfile / Nginx / Redis 配置。
+这个项目发布的是“配置工坊页面”本身，不是右侧生成出来的 FRP / Dockerfile / Nginx / Redis 配置。
 
 ## 本地开发
 

@@ -2,7 +2,7 @@
 // AI 助手面板 —— 作为 GeneratorWorkbench 里 NDrawer 的内容组件。
 // 两种模式: verify(校验当前配置) / generate(口述需求生成配置填回表单)。
 // 调同源 /api/ai(Pages Function 持 KEY), 提示词在后端, 这里只发公开数据。
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import {
   NAlert,
   NButton,
@@ -14,7 +14,7 @@ import {
   NSpin,
   useMessage,
 } from "naive-ui";
-import { askAI, parseAIJSON } from "../composables/useAI";
+import { askAI, getAIInfo, parseAIJSON } from "../composables/useAI";
 
 const props = defineProps({
   generator: { type: Object, required: true },
@@ -38,6 +38,8 @@ const result = ref("");
 const loading = ref(false);
 // AI 流式返回的增量文本，用于展示“思考过程”面板。
 const streamText = ref("");
+// 后端会返回当前实际使用的模型展示名，例如 siliconflow/GLM-5.2 显示为 GLM-5.2。
+const activeModel = ref("");
 // 控制思考过程折叠面板：请求中展开，请求结束后自动收起。
 const thinkingExpanded = ref(["thinking"]);
 
@@ -62,6 +64,12 @@ const aiReference = computed(() =>
 );
 // 只要请求中或已经收到过增量文本，就显示可折叠的思考过程。
 const showThinking = computed(() => loading.value || Boolean(streamText.value));
+const modelLabel = computed(() => activeModel.value || "AI");
+
+onMounted(async () => {
+  const info = await getAIInfo();
+  if (info.ok) activeModel.value = info.model;
+});
 
 // 切到不支持口述生成的工具时，自动退回验证模式，避免保留不可用状态。
 watch(canGenerate, (enabled) => {
@@ -95,10 +103,17 @@ async function runAI() {
     userInput: payload.userInput,
   });
 
-  const res = await askAI(payload, (_delta, full) => {
-    streamText.value = full;
-  });
+  const res = await askAI(
+    payload,
+    (_delta, full) => {
+      streamText.value = full;
+    },
+    (meta) => {
+      activeModel.value = meta.model || "";
+    },
+  );
   loading.value = false;
+  activeModel.value = res.meta?.model || "";
   if (streamText.value) {
     thinkingExpanded.value = [];
   }
@@ -167,7 +182,7 @@ async function runAI() {
       把当前 <code>{{ toolId }}</code> 配置发给 AI, 依据参考规范校验, 输出通过/问题清单。
     </p>
     <NAlert v-if="mode === 'verify'" type="info" :bordered="false">
-      AI 辅助需要启用后才可使用；不可用时不影响配置生成、复制和下载。
+      由 {{ modelLabel }} 提供支持。
     </NAlert>
     <template v-else>
       <p class="ai-hint">
@@ -186,6 +201,9 @@ async function runAI() {
     </NAlert>
 
     <div class="ai-actions">
+      <span class="ai-model">
+        由 {{ modelLabel }} 提供支持
+      </span>
       <NButton
         type="primary"
         :loading="loading"
@@ -251,7 +269,13 @@ async function runAI() {
 }
 .ai-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 10px;
+}
+.ai-model {
+  color: #6b7280;
+  font-size: 12px;
 }
 .ai-thinking {
   border: 1px solid #e5e7eb;

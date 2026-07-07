@@ -34,6 +34,7 @@ const AI_UNAVAILABLE = "AI 暂时不可用，请稍后重试或检查服务配�
 const MAX_REQUEST_BYTES = 96 * 1024;
 const MAX_REFERENCE_CHARS = 16 * 1024;
 const MAX_UPSTREAM_FALLBACK_CHARS = 64 * 1024;
+const DEFAULT_AI_MODEL = "gpt-4o-mini";
 
 function sseChunk(obj) {
   return `data: ${JSON.stringify(obj)}\n\n`;
@@ -44,6 +45,11 @@ function jsonResponse(body, status = 200, headers = {}) {
     status,
     headers: { ...JSON_HEADERS, ...headers },
   });
+}
+
+function displayModelName(model) {
+  const value = String(model || DEFAULT_AI_MODEL).trim();
+  return value.split("/").filter(Boolean).at(-1) || value || DEFAULT_AI_MODEL;
 }
 
 // 只允许同源页面通过 CORS 预检，降低公开端点被第三方站点滥用。
@@ -122,6 +128,18 @@ export async function onRequestOptions(context) {
   });
 }
 
+export async function onRequestGet(context) {
+  if (!isAllowedOriginRequest(context.request, context.env)) {
+    return jsonResponse({ error: AI_UNAVAILABLE }, 403);
+  }
+  const model = context.env?.AI_MODEL || DEFAULT_AI_MODEL;
+  return jsonResponse(
+    { model: displayModelName(model) },
+    200,
+    sameOriginCorsHeaders(context.request),
+  );
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -135,6 +153,7 @@ export async function onRequestPost(context) {
     ? baseUrl
     : `${baseUrl}/chat/completions`;
   const apiKey = env?.AI_API_KEY;
+  const model = env.AI_MODEL || DEFAULT_AI_MODEL;
   if (!baseUrl || !apiKey) {
     return jsonResponse({ error: AI_UNAVAILABLE }, 503);
   }
@@ -179,7 +198,7 @@ export async function onRequestPost(context) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: env.AI_MODEL || "gpt-4o-mini",
+        model,
         messages,
         temperature: mode === "generate" ? 0.2 : 0.3,
         stream: true,
@@ -209,6 +228,7 @@ export async function onRequestPost(context) {
       const reader = upstream.body.getReader();
       const send = (obj) => controller.enqueue(encoder.encode(sseChunk(obj)));
       try {
+        send({ meta: { model: displayModelName(model) } });
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;

@@ -1,4 +1,4 @@
-# 配置生成工作台
+# 配置工坊
 
 一个纯前端的 Vue 3 + Vite + Naive UI 配置参考生成器，用来给目标服务生成 FRP、Dockerfile、docker-compose、Nginx、Caddy、Redis 等常用配置。
 
