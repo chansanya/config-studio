@@ -7,7 +7,7 @@ const AI_ENDPOINT = "/api/ai";
 const UNAVAILABLE_MESSAGE = "AI 暂时不可用，请稍后重试或检查服务配置。";
 
 // 调用 AI 代理(SSE 流式)。
-// payload: { mode: "verify"|"generate", tool, userInput?, config?, reference? }
+// payload: { mode: "verify"|"generate"|"usage", tool, userInput?, config?, reference? }
 // onDelta(delta, full): 每收到一段增量文本时回调, delta 是本次片段, full 是已累计的完整内容。
 // 返回 { ok: true, content } 或 { ok: false, error }。content 即最终完整文本。
 export async function askAI(payload, onDelta) {

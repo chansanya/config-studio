@@ -20,6 +20,8 @@ const SYSTEM_PROMPTS = {
     "你是配置校验专家。依据参考规范(reference)校验用户提交的配置文本(config)。输出 markdown: 第一行写『✅ 通过』或『❌ 有问题』, 随后用要点逐条列出问题并引用具体字段名/指令名; 没问题就只写通过一行。禁止开场白、禁止复述配置原文。",
   generate:
     "你是配置生成专家。依据 reference.expectedJson / reference.schema 中的表单字段和用户需求(userInput)生成配置。严格规则: 只输出一个 JSON 对象; reference.expectedJson 是目标结构说明, 不要原样返回 type/keys/shape/schema; 对象的键必须使用表单 state key, 不要使用 Dockerfile/Nginx/Caddy/Redis 等配置指令名; 静态表单直接返回字段 key, 动态块返回 services/sites/handles/upstreams/servers/locations 等数组; 值必须符合 schema 字段类型与选项; 禁止任何解释文字; 禁止 markdown 代码块标记(不要写 ```json); 输出必须是可直接 JSON.parse 的合法 JSON。",
+  usage:
+    "你是配置落地说明助手。依据参考规范(reference)和当前配置文本(config)，为用户生成中文使用说明。严格规则: 输出 markdown；第一行必须是『# 使用说明』；随后只保留对落地有帮助的内容：启动/加载方式、访问方式、前置条件、需要替换的示例值、常见风险提示；尽量结合当前工具和配置内容写出具体命令、路径、端口、域名或服务名；不要解释 AI 自己在做什么；不要复述整份配置；不要输出代码块围栏。",
 };
 
 const SSE_HEADERS = {
@@ -150,7 +152,7 @@ export async function onRequestPost(context) {
 
   const { mode, tool, userInput, config, reference } = body || {};
   if (!SYSTEM_PROMPTS[mode]) {
-    return jsonResponse({ error: "无效 mode, 仅支持 verify / generate" }, 400);
+    return jsonResponse({ error: "无效 mode, 仅支持 verify / generate / usage" }, 400);
   }
 
   // 3. 组装 messages: system 固定模板 + user 只放公开数据(限长防滥用)

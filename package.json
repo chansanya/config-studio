@@ -7,10 +7,12 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "pages:dev": "npm run build && XDG_CONFIG_HOME=.wrangler npx wrangler pages dev ./dist --compatibility-date=2026-07-02",
-    "pages:env": "XDG_CONFIG_HOME=.wrangler npx wrangler pages secret bulk .dev.vars --project-name config-studio",
-    "pages:secrets:list": "XDG_CONFIG_HOME=.wrangler npx wrangler pages secret list --project-name config-studio",
-    "pages:deploy": "npm run build && XDG_CONFIG_HOME=.wrangler npx wrangler pages deploy ./dist --project-name config-studio"
+    "pages:dev": "npm run build && npx wrangler pages dev ./dist --compatibility-date=2026-07-02",
+    "pages:login": "npx wrangler login",
+    "pages:env": "npx wrangler pages secret bulk .dev.vars --project-name config-studio",
+    "pages:secrets:list": "npx wrangler pages secret list --project-name config-studio",
+    "pages:deploy": "npm run build && npx wrangler pages deploy ./dist --project-name config-studio",
+    "pages:release": "npm run pages:env && npm run pages:deploy"
   },
   "dependencies": {
     "@lucide/vue": "^1.23.0",

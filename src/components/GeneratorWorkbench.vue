@@ -10,6 +10,7 @@ import {
   NInput,
   NSelect,
   NScrollbar,
+  NSpin,
   NTabPane,
   NTabs,
   useMessage,
@@ -40,6 +41,7 @@ import {
   Trash2,
 } from "@lucide/vue";
 import { createGenerators } from "../generators";
+import { askAI } from "../composables/useAI";
 import AIPanel from "./AIPanel.vue";
 import FieldControl from "./FieldControl.vue";
 
@@ -111,20 +113,40 @@ const blockViews = computed(() =>
 );
 // 右侧输出全部从当前生成器派生，切换工具或修改表单时自动刷新。
 const generatedConfig = computed(() => activeGenerator.value.generateConfig());
-// 使用说明和配置文本分开派生，右侧两个 Tab 可以独立复制。
-const usageText = computed(() => activeGenerator.value.generateUsage());
 // 下载文件名由生成器决定，例如 frps.toml、nginx.conf 或 redis.conf。
 const outputFileName = computed(() => activeGenerator.value.fileName());
 // 左侧当前工具标题，跟随生成器切换。
 const panelTitle = computed(() => activeGenerator.value.panelTitle());
 // 左侧当前工具说明，用于快速判断这个 Tab 生成什么目标配置。
 const panelLead = computed(() => activeGenerator.value.panelLead());
+// AI 生成的使用说明；只在“使用说明”Tab 打开后按当前配置生成，避免无意义请求。
+const aiUsageText = ref("");
+const usageLoading = ref(false);
+const usageError = ref("");
+const usageCache = new Map();
+let usageRequestSerial = 0;
+let usageTimer = null;
 
 // 切换生成器时回到基础配置和配置预览，避免停留在上一个工具的功能块位置。
 watch(activeGeneratorId, () => {
   activeSectionId.value = "field-0";
   outputTab.value = "config";
+  aiUsageText.value = "";
+  usageError.value = "";
+  usageLoading.value = false;
   nextTick(() => scrollToSection("field-0", false));
+});
+
+watch([outputTab, generatedConfig, activeGeneratorId], () => {
+  if (usageTimer) {
+    clearTimeout(usageTimer);
+    usageTimer = null;
+  }
+
+  if (outputTab.value !== "usage") return;
+  usageTimer = setTimeout(() => {
+    generateUsageWithAI();
+  }, 700);
 });
 
 // schema 里只保存图标名，这里统一映射成 lucide 组件并提供默认图标。
@@ -258,11 +280,6 @@ function copyConfig() {
   copyText(generatedConfig.value, "配置已复制");
 }
 
-// 使用说明单独复制，方便用户只拿启动命令和注意事项。
-function copyUsage() {
-  copyText(usageText.value, "说明已复制");
-}
-
 // 下载时只下载当前配置文本，不混入右侧使用说明。
 function downloadConfig() {
   const blob = new Blob([generatedConfig.value], {
@@ -282,6 +299,53 @@ function downloadConfig() {
 // AI 抽屉不进入输出 Tabs，避免和“生成产物”语义混在一起。
 function openAI() {
   aiDrawerOpen.value = true;
+}
+
+async function generateUsageWithAI() {
+  const generator = activeGenerator.value;
+  const configText = generatedConfig.value.trim();
+  const requestId = ++usageRequestSerial;
+  const cacheKey = `${generator.id}::${configText}`;
+
+  if (!configText) {
+    aiUsageText.value = "";
+    usageError.value = "当前还没有可说明的配置内容。";
+    usageLoading.value = false;
+    return;
+  }
+
+  if (usageCache.has(cacheKey)) {
+    aiUsageText.value = usageCache.get(cacheKey);
+    usageError.value = "";
+    usageLoading.value = false;
+    return;
+  }
+
+  usageLoading.value = true;
+  usageError.value = "";
+
+  const res = await askAI({
+    mode: "usage",
+    tool: generator.id,
+    config: configText,
+    reference: generator.getReference?.(),
+  });
+
+  if (requestId !== usageRequestSerial) return;
+
+  usageLoading.value = false;
+  if (!res.ok) {
+    aiUsageText.value = "";
+    usageError.value = res.error || "使用说明暂时不可用，请稍后重试。";
+    return;
+  }
+
+  aiUsageText.value = (res.content || "").trim();
+  if (!aiUsageText.value) {
+    usageError.value = "AI 没有返回可用的使用说明。";
+    return;
+  }
+  usageCache.set(cacheKey, aiUsageText.value);
 }
 </script>
 
@@ -688,12 +752,6 @@ function openAI() {
               </template>
               下载
             </NButton>
-            <NButton secondary @click="copyUsage">
-              <template #icon>
-                <ClipboardList :size="16" aria-hidden="true" />
-              </template>
-              复制说明
-            </NButton>
             <NButton secondary type="primary" @click="openAI">
               <template #icon>
                 <Sparkles :size="16" aria-hidden="true" />
@@ -720,10 +778,15 @@ function openAI() {
             <div class="usage-shell">
               <div class="usage-bar">
                 <Terminal :size="16" aria-hidden="true" />
-                <span>目标服务执行参考</span>
+                <span>AI 生成的落地说明</span>
+                <NSpin v-if="usageLoading" size="small" />
               </div>
               <NInput
-                :value="usageText"
+                :value="
+                  usageLoading
+                    ? aiUsageText || 'AI 正在根据当前配置生成使用说明...'
+                    : usageError || aiUsageText
+                "
                 type="textarea"
                 readonly
                 :autosize="{ minRows: 18, maxRows: 32 }"
